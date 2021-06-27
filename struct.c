@@ -3,16 +3,16 @@
 
 /*----------struct to packet------*/
 void data2packet(struct DATA_PACKAGE* data, char* packet){
-    sprintf(packet, DATA, data->id, data->src, data->dest, data->message);
+    sprintf(packet, DATA, data->id, data->src.u8[1], data->dest.u8[1], data->message);
 }
 void ack2packet(struct ACK_PACKAGE* ack, char* packet){
-	sprintf(packet, ACK, ack->id, ack->src);
+	sprintf(packet, ACK, ack->id, ack->src.u8[1]);
 }
 void req2packet(struct REQ_PACKAGE* req, char* packet){
-	sprintf(packet, REQ, req->id, req->src, req->dest);
+	sprintf(packet, REQ, req->id, req->src.u8[1], req->dest.u8[1]);
 }
 void rep2packet(struct REP_PACKAGE* rep, char* packet){
-	sprintf(packet, REP, rep->id, rep->src, rep->dest, rep->hops, rep->rssi);
+	sprintf(packet, REP, rep->id, rep->src.u8[1], rep->dest.u8[1], rep->hops, rep->rssi);
 }
 
 /*----------packet to struct------*/
@@ -27,10 +27,10 @@ int packet2data(char* package, struct DATA_PACKAGE* data){
 		data->id = atoi(id);
 		//src
 		src[0] = package[15];
-		data->src = atoi(src);
+		data->src.u8[1] = atoi(src);
 		// dest
 		dest[0] = package[22];
-		data->dest = atoi(dest);
+		data->dest.u8[1] = atoi(dest);
 		//message
 		strncpy(data->message, package+32, DATA_PAYLOAD_LEN);
 
@@ -49,7 +49,7 @@ int packet2ack(char* package, struct ACK_PACKAGE* ack){
 		ack->id = atoi(id);
 		//src
 		src[0] = package[14];
-		ack->src = atoi(src);
+		ack->src.u8[1] = atoi(src);
 
 		return 1;
 	}
@@ -68,23 +68,23 @@ int packet2req(char* package, struct REQ_PACKAGE* req){
 		req->id = atoi(id);
 		//src
 		src[0] = package[18];
-		req->src = atoi(src);
+		req->src.u8[1] = atoi(src);
 		//dest
 		dest[0] = package[25];
-		req->dest = atoi(dest);
+		req->dest.u8[1] = atoi(dest);
 
 		return 1;
 	}
 	return 0;
 
 }
-
+#define REP "REPLY;ID:%2d;SRC:%1d;DEST:%1d;HOP:%1d;RSSI:%3d"
 int packet2rep(char* package, struct REP_PACKAGE* rep){
 	static char id[2];
 	static char src[1];
 	static char dest[1];
 	static char hop[1];
-	static char rssi[2];
+	static char rssi[3];
 	if(strncmp(package, "REPLY", 5) == 0){
 		// id
 		id[0] = package[9];
@@ -92,10 +92,18 @@ int packet2rep(char* package, struct REP_PACKAGE* rep){
 		rep->id = atoi(id);
 		//src
 		src[0] = package[16];
-		rep->src = atoi(src);
+		rep->src.u8[1] = atoi(src);
 		//dest
 		dest[0] = package[23];
-		rep->dest = atoi(dest);
+		rep->dest.u8[1] = atoi(dest);
+		//hop
+		hop[0] = package[29];
+		rep->hops = atoi(hop);
+		//rssi
+		rssi[0] = package[36];
+		rssi[1] = package[37];
+		rssi[2] = package[38];
+		rep->rssi = atoi(rssi);
 
 		return 1;
 	}
