@@ -1,0 +1,30 @@
+obj_zoul/ff.o: /home/tianzheng/contiki/lib/fs/fat/ff.c \
+ /home/tianzheng/contiki/lib/fs/fat/ff.h \
+ /home/tianzheng/contiki/lib/fs/fat/integer.h \
+ /home/tianzheng/contiki/platform/zoul/fs/fat/ffconf.h \
+ /home/tianzheng/contiki/platform/zoul/./contiki-conf.h \
+ /home/tianzheng/contiki/platform/zoul/remote-revb/board.h \
+ /home/tianzheng/contiki/cpu/cc2538/./dev/gpio.h \
+ /home/tianzheng/contiki/cpu/cc2538/./reg.h \
+ /home/tianzheng/contiki/cpu/cc2538/./dev/nvic.h \
+ /home/tianzheng/contiki/cpu/cc2538/./cc2538_cm3.h \
+ /home/tianzheng/contiki/cpu/cc2538/../arm/common/CMSIS/core_cm3.h \
+ /home/tianzheng/contiki/cpu/cc2538/../arm/common/CMSIS/core_cmInstr.h \
+ /home/tianzheng/contiki/cpu/cc2538/../arm/common/CMSIS/cmsis_gcc.h \
+ /home/tianzheng/contiki/cpu/cc2538/../arm/common/CMSIS/core_cmFunc.h \
+ /home/tianzheng/contiki/lib/fs/fat/diskio.h
+/home/tianzheng/contiki/lib/fs/fat/ff.c :
+ /home/tianzheng/contiki/lib/fs/fat/ff.h :
+ /home/tianzheng/contiki/lib/fs/fat/integer.h :
+ /home/tianzheng/contiki/platform/zoul/fs/fat/ffconf.h :
+ /home/tianzheng/contiki/platform/zoul/./contiki-conf.h :
+ /home/tianzheng/contiki/platform/zoul/remote-revb/board.h :
+ /home/tianzheng/contiki/cpu/cc2538/./dev/gpio.h :
+ /home/tianzheng/contiki/cpu/cc2538/./reg.h :
+ /home/tianzheng/contiki/cpu/cc2538/./dev/nvic.h :
+ /home/tianzheng/contiki/cpu/cc2538/./cc2538_cm3.h :
+ /home/tianzheng/contiki/cpu/cc2538/../arm/common/CMSIS/core_cm3.h :
+ /home/tianzheng/contiki/cpu/cc2538/../arm/common/CMSIS/core_cmInstr.h :
+ /home/tianzheng/contiki/cpu/cc2538/../arm/common/CMSIS/cmsis_gcc.h :
+ /home/tianzheng/contiki/cpu/cc2538/../arm/common/CMSIS/core_cmFunc.h :
+ /home/tianzheng/contiki/lib/fs/fat/diskio.h :

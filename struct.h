@@ -51,7 +51,7 @@ struct REP_PACKAGE{
 	linkaddr_t src;
 	linkaddr_t dest;
 	int hops;
-	init16_t rssi;
+	uint16_t rssi;
 };
 
 
@@ -63,17 +63,18 @@ struct ROUTING_TABLE{
 	linkaddr_t next;
     int hops;
     int valid;
-    int16_t rssi;
+    int age;
+    uint16_t rssi;
 };
 
 /**
  * discovery table
  */
-struct DISCOVERY_TABLE_ENTRY{
+struct DISCOVERY_TABLE{
     int id;
-    int src;
-    int dest;
-    int snd;
+    linkaddr_t src;
+    linkaddr_t dest;
+    linkaddr_t snd;
     int valid;
     int age;
 };

@@ -9,8 +9,8 @@
 #define INF_RSSI 1000                 // Infinite of rssi
 
 /*MAXTIME STTING*/
-#define ROUTE_DISCOVERY_TIME 5   // maximum time to obtain route to a destination
-//#define ROUTE_EXPIRATION_TIME 90   // maximum time a route entry is considered valid
+#define MAX_DISCOVERY_TIME 5   // maximum time to obtain route to a destination
+#define MAX_ROUTE_TIME 60   // maximum time a route entry is considered valid
 #define DATA_PACKAGE_DELTA_TIME 20   // Sending data per 20 seconds
 #define MAX_QUEUEING_TIME 10    // Maximum time for a data package to remain in the queue before being discarded
 
@@ -21,8 +21,8 @@
 
 /*NODES*/
 #define MAX_NODES 7     // total number of nodes
-#define MAX_DATA_IN_QUEUE 10    // Maximum data packages waiting to be sent
-#define DISCO_SIZE MAX_NODES*MAX_NODES
+#define MAX_WAIT_DATA 10    // Maximum data packages waiting to be sent
+#define MAX_TABLE_SIZE MAX_NODES*MAX_NODES
 
 /*CHANNELS*/
 #define RREQ_CHANNEL 15

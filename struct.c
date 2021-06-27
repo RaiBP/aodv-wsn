@@ -27,10 +27,10 @@ int packet2data(char* package, struct DATA_PACKAGE* data){
 		data->id = atoi(id);
 		//src
 		src[0] = package[15];
-		data->src = atoi(src);
+		data->src.u8[1] = atoi(src);
 		// dest
 		dest[0] = package[22];
-		data->dest = atoi(dest);
+		data->dest.u8[1] = atoi(dest);
 		//message
 		strncpy(data->message, package+32, DATA_PAYLOAD_LEN);
 
@@ -49,7 +49,7 @@ int packet2ack(char* package, struct ACK_PACKAGE* ack){
 		ack->id = atoi(id);
 		//src
 		src[0] = package[14];
-		ack->src = atoi(src);
+		ack->src.u8[1] = atoi(src);
 
 		return 1;
 	}
@@ -68,10 +68,10 @@ int packet2req(char* package, struct REQ_PACKAGE* req){
 		req->id = atoi(id);
 		//src
 		src[0] = package[18];
-		req->src = atoi(src);
+		req->src.u8[1] = atoi(src);
 		//dest
 		dest[0] = package[25];
-		req->dest = atoi(dest);
+		req->dest.u8[1] = atoi(dest);
 
 		return 1;
 	}
@@ -92,10 +92,10 @@ int packet2rep(char* package, struct REP_PACKAGE* rep){
 		rep->id = atoi(id);
 		//src
 		src[0] = package[16];
-		rep->src = atoi(src);
+		rep->src.u8[1] = atoi(src);
 		//dest
 		dest[0] = package[23];
-		rep->dest = atoi(dest);
+		rep->dest.u8[1] = atoi(dest);
 
 		return 1;
 	}
