@@ -13,6 +13,7 @@
 #define MAX_ROUTE_TIME 60   		// maximum time a route entry is considered valid
 #define DATA_DELTA_TIME 20   		// Sending data per 20 seconds
 #define MAX_QUEUEING_TIME 10    	// Maximum time for a data package to remain in the queue before being discarded
+#define MSX_ACK_WAIT_TIME 5
 
 /*SIZES OF DATA*/
 #define DATA_PAYLOAD_LEN 37     	// length of payload in data packages
