@@ -7,6 +7,7 @@
 #include <stdio.h>  // For printf
 #include <stdlib.h>
 #include <math.h>
+#include <random.h>
 
 #include "project_conf.h"
 #include "print_func.h"
@@ -43,7 +44,8 @@ static const struct unicast_callbacks ack_cbk = {ack_callback};
 static void senddata(struct DATA_PACKAGE *data, int next);
 static void sendreq(struct REQ_PACKAGE* req);
 static void sendrep(struct REP_PACKAGE* rep, int next);
-static void sendack(struct ACK_PACKAGE* ack, int next);
+static void sendack(struct ACK_PACKAGE *ack, int pre);
+
 
 /*getdata functions*/
 static int getTemperatureValue();
@@ -104,9 +106,12 @@ PROCESS_THREAD(data_process, ev, data){
 
     static int next;
 
+    static int initial_delay;
+
 	PROCESS_BEGIN();
 
-	etimer_set(&et, CLOCK_CONF_SECOND);
+    initial_delay = random_rand() % DATA_DELTA_TIME;
+    etimer_set(&et, (CLOCK_CONF_SECOND) * initial_delay );
 
 	while(1){
 
@@ -304,17 +309,19 @@ PROCESS_THREAD(aging_process, ev, data)
 /*---------------------callback functions---------------*/
 static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
     static struct DATA_PACKAGE data;
-    char packet[DATA_LEN];
+    static struct ACK_PACKAGE ack;
+    char data_packet[DATA_LEN];
 //    char *packet;
 
     printf("\n--------Data received--------\n");
 
-    strncpy(packet, (char *)packetbuf_dataptr(), DATA_LEN);
+    strncpy(data_packet, (char *)packetbuf_dataptr(), DATA_LEN);
 //    packetbuf_copyto(packet);
 
-    printf("Received data: %s\n", packet);
+    printf("Received data: %s\n", data_packet);
 
-    if(packet2data(packet, &data) != 0){
+    if(packet2data(data_packet, &data) != 0){
+    	packetbuf_clear();
         // if the destination is itself
     	packetbuf_clear();
         if(data.dest.u8[1] == linkaddr_node_addr.u8[1]){
@@ -324,10 +331,46 @@ static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
         else{
             process_post(&data_process, PROCESS_EVENT_CONTINUE, &data);
         }
+
+        // send ACK
+        ack.id = data.id;
+        ack.src = data.src;
+        sendack(&ack, from->u8[1]);
+
     }
     // case not data package
     else{
-        printf("Incorrect data package: %s\n", packet);
+        printf("Incorrect data package: %s\n", data_packet);
+    }
+    packetbuf_clear();
+}
+
+static void ack_callback(struct unicast_conn *c, const linkaddr_t *from){
+    static struct ACK_PACKAGE ack;
+    char packet[ACK_LEN];
+//    char *packet;
+
+    printf("\n--------Ack received--------\n");
+
+    strncpy(packet, (char *)packetbuf_dataptr(), ACK_LEN);
+//    packetbuf_copyto(packet);
+
+    printf("Received ack: %s\n", packet);
+
+    if(packet2ack(packet, &ack) != 0){
+    	packetbuf_clear();
+
+    	for(int i = 0; i < MAX_WAIT_DATA; i++){
+    		if(waitingTable[i].data_pkg.id == ack.id
+    				&& waitingTable[i].data_pkg.src.u8[1] == ack.src.u8[1]){
+    			waitingTable[i].valid = 0;
+    			printWaitingTable(waitingTable);
+    		}
+    	}
+    }
+    // case not ack package
+    else{
+        printf("Incorrect ack package: %s\n", packet);
     }
     packetbuf_clear();
 }
@@ -432,6 +475,7 @@ static void request_callback(struct broadcast_conn *c, const linkaddr_t *from)
         packetbuf_clear();
     }
 
+    packetbuf_clear();
 }
 
 /*---------------------table functions---------------*/
@@ -603,7 +647,7 @@ static void senddata(struct DATA_PACKAGE *data, int next){
 
     static linkaddr_t next_addr;
     next_addr.u8[1]=next;
-    next_addr.u8[0]=0;
+    next_addr.u8[0]=0xFF;
 
     printf("\n--------Data sending--------\n");
 
@@ -613,6 +657,7 @@ static void senddata(struct DATA_PACKAGE *data, int next){
     packetbuf_copyfrom(packet, DATA_LEN);
     unicast_send(&data_conn, &next_addr);
     packetbuf_clear();
+
     printf("Sending DATA {%s} to %d via %d \n",
             data->message, data->dest.u8[1], next);
 }
@@ -631,6 +676,7 @@ static void sendreq(struct REQ_PACKAGE* req)
     packetbuf_clear();
     packetbuf_copyfrom(packet, REQ_LEN);
     broadcast_send(&req_conn);
+    packetbuf_clear();
 
     printf("Broadcasting Request to %d with ID:%d and Source:%d\n",req->dest.u8[1], req->id, req->src.u8[1]);
 
@@ -654,12 +700,30 @@ static void sendrep(struct REP_PACKAGE* rep, int next)
     packetbuf_clear();
     packetbuf_copyfrom(packet, REP_LEN);
     unicast_send(&rep_conn, &to_rimeaddr);
+    packetbuf_clear();
 
     printf("Sending ROUTE_REPLY toward %d via %d [ID:%d, Dest:%d, Src:%d, Hops:%d]\n",
             rep->src.u8[1], next, rep->id, rep->dest.u8[1], rep->src.u8[1], rep->hops);
 }
 
+static void sendack(struct ACK_PACKAGE *ack, int pre){
+	static char packet[ACK_LEN];
 
+	static linkaddr_t pre_addr;
+	pre_addr.u8[1]=pre;
+	pre_addr.u8[0]=0xFF;
+
+	printf("\n--------Ack sending--------\n");
+
+	ack2packet(ack, packet);
+	printf("Send ack packet: %s\n", packet);
+	packetbuf_clear();
+	packetbuf_copyfrom(packet, ACK_LEN);
+	unicast_send(&ack_conn, &pre_addr);
+	packetbuf_clear();
+
+	printf("Sending ACK to %d\n", pre);
+}
 
 
 
