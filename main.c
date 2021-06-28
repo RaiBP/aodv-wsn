@@ -308,7 +308,6 @@ static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
     static struct ACK_PACKAGE ack;
     char data_packet[DATA_LEN];
 //    char *packet;
-    char ack_packet[ACK_LEN];
 
     printf("\n--------Data received--------\n");
 
@@ -331,12 +330,12 @@ static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
         // send ACK
         ack.id = data.id;
         ack.src = data.src;
-        sendack(ack, from);
+        sendack(&ack, from->u8[1]);
 
     }
     // case not data package
     else{
-        printf("Incorrect data package: %s\n", packet);
+        printf("Incorrect data package: %s\n", data_packet);
     }
     packetbuf_clear();
 }
@@ -358,9 +357,9 @@ static void ack_callback(struct unicast_conn *c, const linkaddr_t *from){
 
     	for(int i = 0; i < MAX_WAIT_DATA; i++){
     		if(waitingTable[i].data_pkg.id == ack.id
-    				&& waitingTable[i].data_pkg.src == ack.src){
+    				&& waitingTable[i].data_pkg.src.u8[1] == ack.src.u8[1]){
     			waitingTable[i].valid = 0;
-    			printWaitingTable();
+    			printWaitingTable(waitingTable);
     		}
     	}
     }
