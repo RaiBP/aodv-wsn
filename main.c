@@ -16,12 +16,14 @@
 static struct unicast_conn rep_conn;
 static struct unicast_conn data_conn;
 static struct broadcast_conn req_conn;
+static struct unicast_conn ack_conn;
 
 /*table functions*/
 static void addEntryToDiscoveryTable(struct DISCOVERY_TABLE* req_info);
 static char updateRoutingTable(struct REP_PACKAGE *rep, const linkaddr_t *from);
 static void clearDiscovery(struct REP_PACKAGE* rep);
 char addToWaitingTable(struct DATA_PACKAGE *data);
+char addToWaitingAckTable(struct DATA_PACKAGE *data);
 
 static char isDuplicateReq(struct REQ_PACKAGE* req);
 
@@ -29,16 +31,19 @@ static char isDuplicateReq(struct REQ_PACKAGE* req);
 static void reply_callback(struct unicast_conn *c, const linkaddr_t *from);
 static void request_callback(struct broadcast_conn *c, const linkaddr_t *from);
 static void data_callback(struct unicast_conn *c, const linkaddr_t *from);
+static void ack_callback(struct unicast_conn *c, const linkaddr_t *from);
 
 /*callbacks*/
 static const struct unicast_callbacks data_cbk = {data_callback};
 static const struct unicast_callbacks rep_cbk = {reply_callback};
 static const struct broadcast_callbacks req_cbk = {request_callback};
+static const struct unicast_callbacks ack_cbk = {ack_callback};
 
 /*transmit functions*/
 static void senddata(struct DATA_PACKAGE *data, int next);
 static void sendreq(struct REQ_PACKAGE* req);
 static void sendrep(struct REP_PACKAGE* rep, int next);
+static void sendack(struct ACK_PACKAGE* ack, int next);
 
 /*getdata functions*/
 static int getTemperatureValue();
@@ -46,8 +51,6 @@ static int getLuxValue();
 
 static int getNextHop();
 
-char addToWaitingTable(struct DATA_PACKAGE *data);
-static void addEntryToDiscoveryTable(struct DISCOVERY_TABLE* req_info);
 
 static struct WAITING_TABLE waitingTable[MAX_WAIT_DATA];
 static struct DISCOVERY_TABLE discoveryTable[MAX_TABLE_SIZE];
@@ -68,6 +71,7 @@ PROCESS_THREAD(initial_process, ev, data){
 		unicast_close(&rep_conn);
 		unicast_close(&data_conn);
 	 	broadcast_close(&req_conn);
+	 	unicast_close(&ack_conn);
 	});
 
 	PROCESS_BEGIN();
@@ -85,6 +89,7 @@ PROCESS_THREAD(initial_process, ev, data){
 	unicast_open(&data_conn, DATA_CHANNEL, &data_cbk);
 	unicast_open(&rep_conn, RREP_CHANNEL, &rep_cbk);
 	broadcast_open(&req_conn, RREQ_CHANNEL, &req_cbk);
+	unicast_open(&ack_conn, ACK_CHANNEL, &ack_cbk);
 
 	PROCESS_END();
 }
@@ -137,6 +142,7 @@ PROCESS_THREAD(data_process, ev, data){
 			strcpy(data_pkg.message,((struct DATA_PACKAGE*)data)->message);
 		}
 
+
 		if(linkaddr_node_addr.u8[1]!=0x01){
 			next = getNextHop();
 
@@ -144,6 +150,8 @@ PROCESS_THREAD(data_process, ev, data){
 			if(next!=0){
 				printf("Sending message: %s\n", data_pkg.message);
 				senddata(&data_pkg, next);
+				// add to waiting table wait for ack
+				addToWaitingAckTable(&data_pkg);
 			}
 			// Otherwise send request broadcast
 			else{
@@ -272,7 +280,6 @@ PROCESS_THREAD(aging_process, ev, data)
                 if (next != 0)  // if the request in the waiting table find a route
                 {
                     senddata(&waitingTable[i].data_pkg, next);
-                    waitingTable[i].valid = 0;
                     flag++;
                 }
                 else
@@ -283,6 +290,7 @@ PROCESS_THREAD(aging_process, ev, data)
                         waitingTable[i].valid = 0;
                         flag++;
                     }
+
                 }
             }
         }
@@ -308,6 +316,7 @@ static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
 
     if(packet2data(packet, &data) != 0){
         // if the destination is itself
+    	packetbuf_clear();
         if(data.dest.u8[1] == linkaddr_node_addr.u8[1]){
             printf("DATA RECEIVED of src %d:\n{%s}\n", data.src.u8[1], data.message);
         }
@@ -320,6 +329,7 @@ static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
     else{
         printf("Incorrect data package: %s\n", packet);
     }
+    packetbuf_clear();
 }
 
 /**
@@ -342,6 +352,7 @@ static void reply_callback(struct unicast_conn *c, const linkaddr_t *from)
     // if REPLY package received
     if(packet2rep(packet, &rep)!=0)
     {
+    	packetbuf_clear();
         printf("REPLY received from %d [ID:%d, Dest:%d, Src:%d, Hops:%d, RSSI: %d]\n",
                         from->u8[1], rep.id, rep.dest.u8[1], rep.src.u8[1], rep.hops, rep.rssi);
 
@@ -362,6 +373,7 @@ static void reply_callback(struct unicast_conn *c, const linkaddr_t *from)
             clearDiscovery(&rep);
         }
     }
+    packetbuf_clear();
 }
 
 
@@ -384,6 +396,7 @@ static void request_callback(struct broadcast_conn *c, const linkaddr_t *from)
     // case REQUEST package received
     if(packet2req(packet, &req) != 0)
     {
+    	packetbuf_clear();
         printf("ROUTE_REQUEST received from %d [ID:%d, Dest:%d, Src:%d]\n",
                         from->u8[1], req.id, req.dest.u8[1], req.src.u8[1]);
 
@@ -416,7 +429,9 @@ static void request_callback(struct broadcast_conn *c, const linkaddr_t *from)
         {
             printf("Duplicated REQUEST: Discarded!\n");
         }
+        packetbuf_clear();
     }
+
 }
 
 /*---------------------table functions---------------*/
@@ -448,6 +463,24 @@ char addToWaitingTable(struct DATA_PACKAGE *data){
         	printf("Add data into waiting table.\n");
             waitingTable[i].data_pkg = *data;
             waitingTable[i].age = MAX_QUEUEING_TIME;
+            waitingTable[i].valid = 1;
+            printWaitingTable(waitingTable);
+            return 1;
+        }
+    }
+    printf("There is no more space in waiting table.\n");
+    return 0;
+}
+
+/**
+ * Add the data to the waiting table waiting for acknowledge
+ */
+char addToWaitingAckTable(struct DATA_PACKAGE *data){
+    for(int i=0; i<MAX_WAIT_DATA; i++) {
+        if(waitingTable[i].valid == 0) {
+        	printf("Add data into waiting table.\n");
+            waitingTable[i].data_pkg = *data;
+            waitingTable[i].age = MAX_ACK_WAIT_TIME;
             waitingTable[i].valid = 1;
             printWaitingTable(waitingTable);
             return 1;
@@ -579,7 +612,7 @@ static void senddata(struct DATA_PACKAGE *data, int next){
     packetbuf_clear();
     packetbuf_copyfrom(packet, DATA_LEN);
     unicast_send(&data_conn, &next_addr);
-
+    packetbuf_clear();
     printf("Sending DATA {%s} to %d via %d \n",
             data->message, data->dest.u8[1], next);
 }
