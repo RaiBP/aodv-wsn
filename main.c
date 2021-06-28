@@ -419,7 +419,7 @@ char addToWaitingTable(struct DATA_PACKAGE *data){
             waitingTable[i].data_pkg = *data;
             waitingTable[i].age = MAX_QUEUEING_TIME;
             waitingTable[i].valid = 1;
-            printWaitingTable(waitingTable);
+            printWaitingTable();
             return 1;
         }
 
