@@ -1,6 +1,4 @@
 #include "contiki.h"
-
-
 #include "net/rime/rime.h"
 #include "dev/leds.h"
 #include "dev/zoul-sensors.h"  // Sensor functions
@@ -13,37 +11,28 @@
 #include "send_func.h"
 #include "struct.h"
 
-
 // Connections
 static struct unicast_conn rep_conn;
 static struct unicast_conn data_conn;
 static struct broadcast_conn req_conn;
 
-/*send functions*/
-static void sendreq(struct REQ_PACKAGE* req, struct broadcast_conn req_conn);
-static void sendrep(struct REP_PACKAGE* rep, int next, struct unicast_conn rep_conn);
-void senddata(struct DATA_PACKAGE *data, int next, struct unicast_conn data_conn);
-
 /*table functions*/
 static void addEntryToDiscoveryTable(struct DISCOVERY_TABLE* req_info);
-static char updateTables(struct REP_PACKAGE *rep, linkaddr_t *from);
+static char updateRoutingTable(struct REP_PACKAGE *rep, const linkaddr_t *from);
 static void clearDiscovery(struct REP_PACKAGE* rep);
 char addToWaitingTable(struct DATA_PACKAGE *data);
 
 static char isDuplicateReq(struct REQ_PACKAGE* req);
-
 
 /*callback functions*/
 static void reply_callback(struct unicast_conn *c, const linkaddr_t *from);
 static void request_callback(struct broadcast_conn *c, const linkaddr_t *from);
 static void data_callback(struct unicast_conn *c, const linkaddr_t *from);
 
-
 /*callbacks*/
 static const struct unicast_callbacks data_cbk = {data_callback};
 static const struct unicast_callbacks rep_cbk = {reply_callback};
 static const struct broadcast_callbacks req_cbk = {request_callback};
-
 
 /*getdata functions*/
 static int getTemperatureValue();
@@ -152,7 +141,7 @@ PROCESS_THREAD(data_process, ev, data){
 	       	discovery.snd.u8[0] = linkaddr_node_addr.u8[0];
 	       	discovery.snd.u8[1] = linkaddr_node_addr.u8[1];
 
-//	     	process_post(&request_process, PROCESS_EVENT_CONTINUE, &discovery);
+	     	process_post(&request_process, PROCESS_EVENT_CONTINUE, &discovery);
 
 	        }
 
@@ -200,7 +189,6 @@ PROCESS_THREAD(aging_process, ev, data)
     static int flag;
     static int i;
     static int next;
-    static int dest;
 
     PROCESS_BEGIN();
 
@@ -263,7 +251,6 @@ PROCESS_THREAD(aging_process, ev, data)
         {
             if(waitingTable[i].valid != 0)
             {
-                dest = waitingTable[i].data_pkg.dest.u8[1];
                 next = getNextHop();
                 if (next != 0)  // if the request in the waiting table find a route
                 {
@@ -277,14 +264,13 @@ PROCESS_THREAD(aging_process, ev, data)
                     if (waitingTable[i].age < 0)
                     {
                         waitingTable[i].valid = 0;
-
                         flag++;
                     }
                 }
             }
         }
         if (flag != 0)  // if the waiting table has changed
-            printWaitingTable(waitingTable);
+            printWaitingTable();
     }
     PROCESS_END();
 }
@@ -330,7 +316,7 @@ static void reply_callback(struct unicast_conn *c, const linkaddr_t *from)
                         from->u8[1], rep.id, rep.dest.u8[1], rep.src.u8[1], rep.hops, rep.rssi);
 
         // check if reply table updates
-        if(updateTables(&rep, from))
+        if(updateRoutingTable(&rep, from))
         {
             // if the source is not me forward reply to all nodes waiting
             if(rep.src.u8[1] != linkaddr_node_addr.u8[1])
@@ -361,7 +347,6 @@ static void request_callback(struct broadcast_conn *c, const linkaddr_t *from)
     static struct REP_PACKAGE rep;
     char *packet;
     packetbuf_copyto(packet);
-
 
     // case REQUEST package received
     if(packet2req(packet, &req) != 0)
@@ -403,44 +388,7 @@ static void request_callback(struct broadcast_conn *c, const linkaddr_t *from)
 
 }
 
-
-/**
- * broadcast the request
- */
-static void sendreq(struct REQ_PACKAGE* req, struct broadcast_conn req_conn)
-{
-    static char packet[REQ_LEN];
-
-    req2packet(req, packet);
-    packetbuf_clear();
-    packetbuf_copyfrom(packet, REQ_LEN);
-    broadcast_send(&req_conn);
-
-    printf("Broadcasting Request to %d with ID:%d and Source:%d\n",req->dest.u8[1], req->id, req->src.u8[1]);
-
-}
-
-/**
- * send the REPLY message
- */
-static void sendrep(struct REP_PACKAGE* rep, int next, struct unicast_conn rep_conn)
-{
-    static char packet[REP_LEN];
-
-    static linkaddr_t to_rimeaddr;
-    to_rimeaddr.u8[1]=next;
-    to_rimeaddr.u8[0]=0;
-
-    rep2packet(rep, packet);
-    packetbuf_clear();
-    packetbuf_copyfrom(packet, REP_LEN);
-    unicast_send(&rep_conn, &to_rimeaddr);
-
-    printf("Sending ROUTE_REPLY toward %d via %d [ID:%d, Dest:%d, Src:%d, Hops:%d]\n",
-            rep->src.u8[1], next, rep->id, rep->dest.u8[1], rep->src.u8[1], rep->hops);
-}
-
-
+/*---------------------table functions---------------*/
 
 /**
  * add entry to discovery table
@@ -462,10 +410,28 @@ static void addEntryToDiscoveryTable(struct DISCOVERY_TABLE* req_info)
     printDiscoveryTable();
 }
 
+/**
+ * Add the data to the waiting table
+ */
+char addToWaitingTable(struct DATA_PACKAGE *data){
+    for(int i=0; i<MAX_WAIT_DATA; i++) {
+        if(waitingTable[i].valid == 0) {
+            waitingTable[i].data_pkg = *data;
+            waitingTable[i].age = MAX_QUEUEING_TIME;
+            waitingTable[i].valid = 1;
+            printWaitingTable(waitingTable);
+            return 1;
+        }
 
+    }
+    return 0;
+}
 
-
-static char updateTables(struct REP_PACKAGE *rep, linkaddr_t *from)
+/**
+ * 	If better route is found, update routing table and return 1
+ * 	Otherwise return 0
+ */
+static char updateRoutingTable(struct REP_PACKAGE *rep, const linkaddr_t *from)
 {
 
     uint16_t rssi = packetbuf_attr(PACKETBUF_ATTR_RSSI);
@@ -488,7 +454,6 @@ static char updateTables(struct REP_PACKAGE *rep, linkaddr_t *from)
     return 0;
 }
 
-
 /**
  * clear discovery table
  */
@@ -501,30 +466,27 @@ static void clearDiscovery(struct REP_PACKAGE *rep)
            // && discoveryTable[i].src == rep->src        // enable for ditinguish on reply id
             && discoveryTable[i].dest.u8[1] == rep->dest.u8[1])
                 discoveryTable[i].valid = 0;
-                return;
     }
-    return;
 }
 
-
-//
 /**
  * check if the received Request was already in the discovery Table
  */
 static char isDuplicateReq(struct REQ_PACKAGE *req)
 {
-    int i;
-    for(i=0; i<MAX_TABLE_SIZE; i++){
+    for(int i=0; i<MAX_TABLE_SIZE; i++){
         if(discoveryTable[i].valid != 0
             && discoveryTable[i].id == req->id
             && discoveryTable[i].src.u8[1] == req->src.u8[1]
             && discoveryTable[i].dest.u8[1] == req->dest.u8[1])
                 return 1;
     }
+    return 0;
 }
 
 
-/*---------------------getdata functions---------------*/
+/*---------------------get data functions---------------*/
+
 /**
  * Get the Temperature value from the sensor.
  */
@@ -569,21 +531,6 @@ static int getNextHop(){
 }
 
 
-/**
- * Add the data to the waiting table
- */
-char addToWaitingTable(struct DATA_PACKAGE *data){
-    for(int i=0; i<MAX_WAIT_DATA; i++) {
-        if(waitingTable[i].valid == 0) {
-            waitingTable[i].data_pkg = *data;
-            waitingTable[i].age = MAX_QUEUEING_TIME;
-            waitingTable[i].valid = 1;
-            printWaitingTable(waitingTable);
-            return 1;
-        }
 
-    }
-    return 0;
-}
 
 

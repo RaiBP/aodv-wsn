@@ -17,7 +17,7 @@ static struct WAITING_TABLE waitingTable[MAX_WAIT_DATA];
 /*print functions*/
 void printDiscoveryTable();
 void printRoutingTable();
-void printWaitingTable(struct WAITING_TABLE *waitingTable);
+void printWaitingTable();
 
 
 #endif

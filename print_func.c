@@ -1,4 +1,5 @@
 #include "print_func.h"
+#include <stdio.h>
 
 
 /**
@@ -35,7 +36,6 @@ void printDiscoveryTable()
  */
 void printRoutingTable()
 {
-    int i;
     char flag = 0;
 
     printf("Routing Table");
@@ -58,7 +58,7 @@ void printRoutingTable()
 /**
  * print the Waiting table
  */
-void printWaitingTable(struct WAITING_TABLE *waitingTable){
+void printWaitingTable(){
 
     int flag = 0;
 
