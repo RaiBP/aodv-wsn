@@ -8,16 +8,11 @@
 #ifndef PRINT_FUNC_H
 #define PRINT_FUNC_H
 
-/*tables define*/
-static struct DISCOVERY_TABLE discoveryTable[MAX_TABLE_SIZE];
-static struct ROUTING_TABLE routingTable;
-static struct WAITING_TABLE waitingTable[MAX_WAIT_DATA];
-
 
 /*print functions*/
-void printDiscoveryTable();
-void printRoutingTable();
-void printWaitingTable();
+void printDiscoveryTable(struct DISCOVERY_TABLE *discoveryTable);
+void printRoutingTable(struct ROUTING_TABLE routingTable);
+void printWaitingTable(struct WAITING_TABLE *waitingTable);
 
 
 #endif

@@ -51,7 +51,7 @@ struct REP_PACKAGE{
 	linkaddr_t src;
 	linkaddr_t dest;
 	int hops;
-	uint16_t rssi;
+	int16_t rssi;
 
 };
 
@@ -65,7 +65,7 @@ struct ROUTING_TABLE{
     int hops;
     int valid;
     int age;
-    uint16_t rssi;
+    int16_t rssi;
 };
 
 /**

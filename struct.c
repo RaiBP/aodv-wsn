@@ -23,7 +23,9 @@ int packet2data(char* package, struct DATA_PACKAGE* data){
 	static char id[2];
 	static char src[1];
 	static char dest[1];
+	printf("--------packet2data--------\n");
 	if(strncmp(package, "DATA", 4) == 0){
+		printf("Is data!\n");
 		// id
 		id[0] = package[8];
 		id[1] = package[9];
@@ -39,13 +41,16 @@ int packet2data(char* package, struct DATA_PACKAGE* data){
 
 	    return 1;
 	}
+	printf("Not data!\n");
 	return 0;
 }
 
 int packet2ack(char* package, struct ACK_PACKAGE* ack){
 	static char id[2];
 	static char src[1];
+	printf("--------packet2ack--------\n");
 	if(strncmp(package, "ACK", 3) == 0){
+		printf("Is ack!\n");
 		// id
 		id[0] = package[7];
 		id[1] = package[8];
@@ -56,6 +61,7 @@ int packet2ack(char* package, struct ACK_PACKAGE* ack){
 
 		return 1;
 	}
+	printf("Not ack!\n");
 	return 0;
 
 }
@@ -64,7 +70,9 @@ int packet2req(char* package, struct REQ_PACKAGE* req){
 	static char id[2];
 	static char src[1];
 	static char dest[1];
+	printf("--------packet2req--------\n");
 	if(strncmp(package, "REQUEST", 7) == 0){
+		printf("Is request!\n");
 		// id
 		id[0] = package[11];
 		id[1] = package[12];
@@ -78,17 +86,20 @@ int packet2req(char* package, struct REQ_PACKAGE* req){
 
 		return 1;
 	}
+	printf("Not request!\n");
 	return 0;
 
 }
-#define REP "REPLY;ID:%2d;SRC:%1d;DEST:%1d;HOP:%1d;RSSI:%3d"
+
 int packet2rep(char* package, struct REP_PACKAGE* rep){
 	static char id[2];
 	static char src[1];
 	static char dest[1];
 	static char hop[1];
 	static char rssi[3];
+	printf("--------packet2rep--------\n");
 	if(strncmp(package, "REPLY", 5) == 0){
+		printf("Is reply!\n");
 		// id
 		id[0] = package[9];
 		id[1] = package[10];
@@ -108,9 +119,9 @@ int packet2rep(char* package, struct REP_PACKAGE* rep){
 		rssi[2] = package[38];
 		rep->rssi = atoi(rssi);
 
-
 		return 1;
 	}
+	printf("Not reply!\n");
 	return 0;
 
 }

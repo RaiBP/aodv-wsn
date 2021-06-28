@@ -5,7 +5,7 @@
 /**
  * print the Discovery Table
  */
-void printDiscoveryTable()
+void printDiscoveryTable(struct DISCOVERY_TABLE *discoveryTable)
 {
     int i = 0;
     int flag = 0;
@@ -34,7 +34,7 @@ void printDiscoveryTable()
 /**
  * print the Routing Table
  */
-void printRoutingTable()
+void printRoutingTable(struct ROUTING_TABLE routingTable)
 {
     char flag = 0;
 
@@ -58,7 +58,7 @@ void printRoutingTable()
 /**
  * print the Waiting table
  */
-void printWaitingTable(){
+void printWaitingTable(struct WAITING_TABLE *waitingTable){
 
     int flag = 0;
 
