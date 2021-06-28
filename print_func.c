@@ -1,5 +1,6 @@
 #include "print_func.h"
 
+
 /**
  * print the Discovery Table
  */
@@ -15,9 +16,9 @@ void printDiscoveryTable()
         {
             printf("\n    {ID:%d; Src:%d; Dest:%d; Snd:%d;}",
                     discoveryTable[i].id,
-                    discoveryTable[i].src,
-                    discoveryTable[i].dest,
-                    discoveryTable[i].snd);
+                    discoveryTable[i].src.u8[1],
+                    discoveryTable[i].dest.u8[1],
+                    discoveryTable[i].snd.u8[1]);
             flag++;
         }
     }
@@ -42,7 +43,7 @@ void printRoutingTable()
     if(routingTable.valid!= 0)
     {
     	printf("\n   {Dest:%d; Next:%d; Hops:%d; Age:%d; RSSI:%d}",
-                    routingTable.dest, routingTable.next,
+                    routingTable.dest.u8[1], routingTable.next.u8[1],
                     routingTable.hops, routingTable.age,
 					routingTable.rssi);
         flag ++;
@@ -57,25 +58,28 @@ void printRoutingTable()
 /**
  * print the Waiting table
  */
-void printWaitingTable()
-{
-    int i, flag = 0;
+void printWaitingTable(struct WAITING_TABLE *waitingTable){
 
-    printf("Data Waiting Table");
-    for(i=0; i<MAX_WAIT_DATA;i++)
-    {
-        if(waitingTable[i].valid!= 0)
+    int flag = 0;
+
+    printf("Waiting Table");
+    for(int i = 0; i < MAX_WAIT_DATA; i++){
+        if(waitingTable[i].valid != 0)
         {
-            printf("\n    {Dest:%d; Age:%d;}",
-                    waitingTable[i].data_pkg.dest,
-                    waitingTable[i].age);
+            printf("\n\t{Src:%d; Dest:%d; Age:%d;}",
+            		waitingTable[i].data_pkg.src.u8[1],
+            		waitingTable[i].data_pkg.dest.u8[1],
+            		waitingTable[i].age);
             flag++;
         }
     }
-    if(flag==0)
-        printf(" is empty \n");
-    else
-        printf("\n");
-}
 
+    if(flag==0){
+        printf(" is empty \n");
+    }
+    else{
+        printf("\n");
+    }
+
+}
 

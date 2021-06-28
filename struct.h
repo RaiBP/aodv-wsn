@@ -9,12 +9,12 @@
 #define DATA "DATA;ID:%2d;SRC:%1d;DEST:%1d;PAYLOAD:%s"
 #define ACK "ACK;ID:%2d;SRC:%1d"
 #define REQ "REQUEST;ID:%2d;SRC:%1d;DEST:%1d"
-#define REP "REPLY;ID:%2d;SRC:%1d;DEST:%1d;HOP:%1d;RSSI:%2d"
+#define REP "REPLY;ID:%2d;SRC:%1d;DEST:%1d;HOP:%1d;RSSI:%3d"
 
 #define DATA_LEN sizeof(DATA)-1 - 7 + DATA_PAYLOAD_LEN
 #define ACK_LEN sizeof(ACK)-1 - 3
 #define REQ_LEN sizeof(REQ)-1 - 5
-#define REP_LEN sizeof(REP)-1 - 8
+#define REP_LEN sizeof(REP)-1 - 7
 
 /**
  * data package
@@ -23,7 +23,7 @@ struct DATA_PACKAGE{
 	int id;
 	linkaddr_t src;
 	linkaddr_t dest;
-	uint8_t message;
+	char message[DATA_LEN];
 };
 
 /**
@@ -52,6 +52,7 @@ struct REP_PACKAGE{
 	linkaddr_t dest;
 	int hops;
 	uint16_t rssi;
+
 };
 
 

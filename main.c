@@ -1,50 +1,165 @@
 #include "contiki.h"
-#include "random.h"
+
 
 #include "net/rime/rime.h"
 #include "dev/leds.h"
-#include "dev/button-sensor.h"
 #include "dev/zoul-sensors.h"  // Sensor functions
 #include "dev/adc-zoul.h"
 
+#include <stdio.h>  // For printf
+
 #include "project_conf.h"
 #include "print_func.h"
+#include "send_func.h"
 #include "struct.h"
-#include <stdio.h>		// For printf
 
 
-
-/*connections*/
-static struct broadcast_conn req_conn;
+// Connections
 static struct unicast_conn rep_conn;
+static struct unicast_conn data_conn;
+static struct broadcast_conn req_conn;
 
 /*send functions*/
-static void sendreq(struct REQ_PACKAGE* req);
-static void sendrep(struct REP_PACKAGE* rep, int next);
-
-
-
+static void sendreq(struct REQ_PACKAGE* req, struct broadcast_conn req_conn);
+static void sendrep(struct REP_PACKAGE* rep, int next, struct unicast_conn rep_conn);
+void senddata(struct DATA_PACKAGE *data, int next, struct unicast_conn data_conn);
 
 /*table functions*/
 static void addEntryToDiscoveryTable(struct DISCOVERY_TABLE* req_info);
-static char updateTables(struct REP_PACKAGE * rep, linkaddr_t from);
+static char updateTables(struct REP_PACKAGE *rep, linkaddr_t *from);
 static void clearDiscovery(struct REP_PACKAGE* rep);
-
+char addToWaitingTable(struct DATA_PACKAGE *data);
 
 static char isDuplicateReq(struct REQ_PACKAGE* req);
 
+
 /*callback functions*/
-static void reply_callback(struct unicast_conn *, const linkaddr_t *);
-static void request_callback(struct broadcast_conn *, const linkaddr_t *);
+static void reply_callback(struct unicast_conn *c, const linkaddr_t *from);
+static void request_callback(struct broadcast_conn *c, const linkaddr_t *from);
+static void data_callback(struct unicast_conn *c, const linkaddr_t *from);
+
+
+/*callbacks*/
+static const struct unicast_callbacks data_cbk = {data_callback};
+static const struct unicast_callbacks rep_cbk = {reply_callback};
+static const struct broadcast_callbacks req_cbk = {request_callback};
+
+
+/*getdata functions*/
+static int getTemperatureValue();
+static int getLuxValue();
+
+static int getNextHop();
 
 
 
+/*---------------------processes---------------*/
+PROCESS(initial_process, "Initialize the routing table and open connections");
+PROCESS(data_process, "Send data.");
 PROCESS(request_process, "Handle REQ_PACKAGE messages");
 PROCESS(aging_process, "Decide the expiration of tables");
 
 
-AUTOSTART_PROCESSES(&request_process, &aging_process);
+AUTOSTART_PROCESSES(&initial_process, &data_process, &request_process, &aging_process);
 
+PROCESS_THREAD(initial_process, ev, data){
+
+	PROCESS_BEGIN();
+
+	printf("-----Process initialized-----");
+
+    // initialize routing table
+	routingTable.dest.u8[0] = (DESTINATION >> 8) & 0xFF;
+	routingTable.dest.u8[1] = DESTINATION & 0xFF;
+	routingTable.valid = 0;
+	routingTable.hops = INF_HOPS;
+	routingTable.rssi = INF_RSSI;
+
+	// open connections
+	unicast_open(&data_conn, DATA_CHANNEL, &data_cbk);
+	unicast_open(&rep_conn, RREP_CHANNEL, &rep_cbk);
+	broadcast_open(&req_conn, RREQ_CHANNEL, &req_cbk);
+
+	PROCESS_END();
+}
+
+PROCESS_THREAD(data_process, ev, data){
+
+	static struct etimer et;
+    static struct DATA_PACKAGE data_pkg;
+	static int id = 1;
+
+    static struct DISCOVERY_TABLE discovery;
+
+    static int next;
+
+
+	PROCESS_BEGIN();
+
+	etimer_set(&et, CLOCK_CONF_SECOND);
+
+	while(1){
+
+		leds_off(LEDS_GREEN);
+
+		PROCESS_WAIT_EVENT();
+
+		leds_on(LEDS_GREEN);
+
+	  	// Send own data
+		if(ev == PROCESS_EVENT_TIMER){
+			// Set message
+			data_pkg.dest.u8[0] = (DESTINATION >> 8) & 0xFF;
+			data_pkg.dest.u8[1] = DESTINATION & 0xFF;
+			data_pkg.id = id;
+			data_pkg.src.u8[0] = linkaddr_node_addr.u8[0];
+			data_pkg.src.u8[1] = linkaddr_node_addr.u8[1];
+			sprintf(data_pkg.message, DATA_PAY, getTemperatureValue(), getLuxValue());
+
+			id = (id<99) ? id+1 : 1;
+
+			// Send data every 20 seconds
+			etimer_set(&et, CLOCK_CONF_SECOND * DATA_DELTA_TIME);
+		}
+		// Forward data
+		else{
+			data_pkg.dest.u8[0] = ((struct DATA_PACKAGE*)data)->dest.u8[0];
+			data_pkg.dest.u8[1] = ((struct DATA_PACKAGE*)data)->dest.u8[1];
+			data_pkg.id = ((struct DATA_PACKAGE*)data)->id;
+			data_pkg.src.u8[0] = ((struct DATA_PACKAGE*)data)->src.u8[0];
+			data_pkg.src.u8[1] = ((struct DATA_PACKAGE*)data)->src.u8[1];
+			strcpy(data_pkg.message,((struct DATA_PACKAGE*)data)->message);
+		}
+
+		next = getNextHop();
+
+		// If the route exists
+		if(next!=0){
+	    	printf("Sending message: %s\n", data_pkg.message);
+	    	senddata(&data_pkg, next, data_conn);
+		}
+		// Otherwise send request broadcast
+		else{
+	      	printf("There is no existing route to %d.\n", data_pkg.dest.u8[1]);
+
+	      	addToWaitingTable(&data_pkg);
+
+	       	discovery.id = data_pkg.id;
+	       	discovery.src.u8[0] = linkaddr_node_addr.u8[0];
+	       	discovery.src.u8[1] = linkaddr_node_addr.u8[1];
+	       	discovery.dest.u8[0] = data_pkg.dest.u8[0];
+	       	discovery.dest.u8[1] = data_pkg.dest.u8[1];
+	       	discovery.snd.u8[0] = linkaddr_node_addr.u8[0];
+	       	discovery.snd.u8[1] = linkaddr_node_addr.u8[1];
+
+//	     	process_post(&request_process, PROCESS_EVENT_CONTINUE, &discovery);
+
+	        }
+
+	    }
+
+	PROCESS_END();
+}
 
 
 /**
@@ -70,7 +185,7 @@ PROCESS_THREAD(request_process, ev, data)
 
         addEntryToDiscoveryTable((struct DISCOVERY_TABLE*)data);    //create entry in routing discovery table
 
-        sendreq(&req);    //broadcasts the REQUEST
+        sendreq(&req, req_conn);    //broadcasts the REQUEST
     }
 
     PROCESS_END();
@@ -85,7 +200,7 @@ PROCESS_THREAD(aging_process, ev, data)
     static int flag;
     static int i;
     static int next;
-    //static int dest;
+    static int dest;
 
     PROCESS_BEGIN();
 
@@ -148,11 +263,11 @@ PROCESS_THREAD(aging_process, ev, data)
         {
             if(waitingTable[i].valid != 0)
             {
-                //dest = waitingTable[i].data_pkg.dest;
-                next = getNext(waitingTable[i].data_pkg.dest);
+                dest = waitingTable[i].data_pkg.dest.u8[1];
+                next = getNextHop();
                 if (next != 0)  // if the request in the waiting table find a route
                 {
-                    //senddata(&waitingTable[i].data_pkg, next);
+                    senddata(&waitingTable[i].data_pkg, next, data_conn);
                     waitingTable[i].valid = 0;
                     flag++;
                 }
@@ -169,20 +284,41 @@ PROCESS_THREAD(aging_process, ev, data)
             }
         }
         if (flag != 0)  // if the waiting table has changed
-            printWaitingTable();
+            printWaitingTable(waitingTable);
     }
     PROCESS_END();
 }
 
 
-/*CALLBACKS FUNCTIONS*/
+/*---------------------callback functions---------------*/
+static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
+    static struct DATA_PACKAGE data;
+    char *dataptr;
+
+    packetbuf_copyto(dataptr);
+
+    if(packet2data(dataptr, &data) != 0){
+        // if the destination is itself
+        if(data.dest.u8[1] == linkaddr_node_addr.u8[1]){
+            printf("DATA RECEIVED of src %d:\n{%s}\n", data.src.u8[1], data.message);
+        }
+        // otherwise
+        else{
+            process_post(&data_process, PROCESS_EVENT_CONTINUE, &data);
+        }
+    }
+    // case not data package
+    else{
+        printf("Incorrect data package: %s\n", dataptr);
+    }
+}
 
 /**
  * called when receive a packet on REP_CHANNEL
  */
 static void reply_callback(struct unicast_conn *c, const linkaddr_t *from)
 {
-    static char *packet;
+    char *packet;
     packetbuf_copyto(packet);
     static struct REP_PACKAGE rep;
     static int i;
@@ -194,7 +330,7 @@ static void reply_callback(struct unicast_conn *c, const linkaddr_t *from)
                         from->u8[1], rep.id, rep.dest.u8[1], rep.src.u8[1], rep.hops, rep.rssi);
 
         // check if reply table updates
-        if(updateTables(&rep, *from))
+        if(updateTables(&rep, from))
         {
             // if the source is not me forward reply to all nodes waiting
             if(rep.src.u8[1] != linkaddr_node_addr.u8[1])
@@ -203,7 +339,7 @@ static void reply_callback(struct unicast_conn *c, const linkaddr_t *from)
                 for(i=0; i<MAX_TABLE_SIZE; i++){
                     if(discoveryTable[i].valid != 0
                         && discoveryTable[i].id == rep.id){
-                            sendrep(&rep, discoveryTable[i].snd.u8[1]);
+                            sendrep(&rep, discoveryTable[i].snd.u8[1], rep_conn);
                     }
                 }
             }
@@ -223,7 +359,7 @@ static void request_callback(struct broadcast_conn *c, const linkaddr_t *from)
 	static struct DISCOVERY_TABLE req_info;
     static struct REQ_PACKAGE req;
     static struct REP_PACKAGE rep;
-    static char *packet;
+    char *packet;
     packetbuf_copyto(packet);
 
 
@@ -243,7 +379,7 @@ static void request_callback(struct broadcast_conn *c, const linkaddr_t *from)
             rep.rssi = 0;
 
             //sends a REPLY to the Request sender
-            sendrep(&rep, from->u8[1]);
+            sendrep(&rep, from->u8[1], rep_conn);
 
         }
 
@@ -268,13 +404,10 @@ static void request_callback(struct broadcast_conn *c, const linkaddr_t *from)
 }
 
 
-
-/*sendfunctions*/
-
 /**
  * broadcast the request
  */
-static void sendreq(struct REQ_PACKAGE* req)
+static void sendreq(struct REQ_PACKAGE* req, struct broadcast_conn req_conn)
 {
     static char packet[REQ_LEN];
 
@@ -284,14 +417,13 @@ static void sendreq(struct REQ_PACKAGE* req)
     broadcast_send(&req_conn);
 
     printf("Broadcasting Request to %d with ID:%d and Source:%d\n",req->dest.u8[1], req->id, req->src.u8[1]);
+
 }
-
-
 
 /**
  * send the REPLY message
  */
-static void sendrep(struct REP_PACKAGE* rep, int next)
+static void sendrep(struct REP_PACKAGE* rep, int next, struct unicast_conn rep_conn)
 {
     static char packet[REP_LEN];
 
@@ -331,18 +463,9 @@ static void addEntryToDiscoveryTable(struct DISCOVERY_TABLE* req_info)
 }
 
 
-/**
- * get the next hop for this destination request
- */
-int getNext(int dest)
-{
-    if (routingTable.valid != 0)
-        return routingTable.next.u8[1];
-    return 0;
-}
 
 
-static char updateTables(struct REP_PACKAGE * rep, linkaddr_t from)
+static char updateTables(struct REP_PACKAGE *rep, linkaddr_t *from)
 {
 
     uint16_t rssi = packetbuf_attr(PACKETBUF_ATTR_RSSI);
@@ -355,7 +478,7 @@ static char updateTables(struct REP_PACKAGE * rep, linkaddr_t from)
         //UPDATES the routing discovery table!
         routingTable.dest = rep->dest;
         routingTable.hops = rep->hops;
-        routingTable.next.u8[1] = from.u8[1];
+        routingTable.next.u8[1] = from->u8[1];
         routingTable.age = MAX_ROUTE_TIME;
         routingTable.valid = 1;
         routingTable.rssi = rep->rssi;
@@ -369,7 +492,7 @@ static char updateTables(struct REP_PACKAGE * rep, linkaddr_t from)
 /**
  * clear discovery table
  */
-static void clearDiscovery(struct REP_PACKAGE* rep)
+static void clearDiscovery(struct REP_PACKAGE *rep)
 {
     int i;
     for(i=0; i<MAX_TABLE_SIZE; i++){
@@ -388,7 +511,7 @@ static void clearDiscovery(struct REP_PACKAGE* rep)
 /**
  * check if the received Request was already in the discovery Table
  */
-static char isDuplicateReq(struct REQ_PACKAGE* req)
+static char isDuplicateReq(struct REQ_PACKAGE *req)
 {
     int i;
     for(i=0; i<MAX_TABLE_SIZE; i++){
@@ -397,6 +520,68 @@ static char isDuplicateReq(struct REQ_PACKAGE* req)
             && discoveryTable[i].src.u8[1] == req->src.u8[1]
             && discoveryTable[i].dest.u8[1] == req->dest.u8[1])
                 return 1;
+    }
+}
+
+
+/*---------------------getdata functions---------------*/
+/**
+ * Get the Temperature value from the sensor.
+ */
+static int getTemperatureValue(){
+	return cc2538_temp_sensor.value(CC2538_SENSORS_VALUE_TYPE_CONVERTED);
+}
+
+/**
+ * Get the lux value from the sensor.
+ */
+static int getLuxValue(){
+	float m =1.6009;
+	float b = 41.269;
+	static uint16_t adc3_value;
+	adc3_value = adc_zoul.value(ZOUL_SENSORS_ADC3) >> 4;
+	uint8_t adc_input = adc3_value;
+
+	//Read voltage from the phidget interface
+	int Vref = 5;
+
+	//Convert the voltage in lux with the provided formula
+	int voltage = (adc_input * Vref * 200)/4096;
+	int lux = m * voltage + b;
+
+	//Return the value of the light with maximum value equal to 1000
+	if (lux>1000){
+		lux = 1000;
+	}
+
+	return lux;
+}
+
+/**
+ *	Return the next hop to the destination
+ */
+static int getNextHop(){
+    if (routingTable.valid != 0){
+        return routingTable.next.u8[1];
+    }
+
+    return 0;
+}
+
+
+/**
+ * Add the data to the waiting table
+ */
+char addToWaitingTable(struct DATA_PACKAGE *data){
+    for(int i=0; i<MAX_WAIT_DATA; i++) {
+        if(waitingTable[i].valid == 0) {
+            waitingTable[i].data_pkg = *data;
+            waitingTable[i].age = MAX_QUEUEING_TIME;
+            waitingTable[i].valid = 1;
+            printWaitingTable(waitingTable);
+            return 1;
+        }
+
     }
     return 0;
 }

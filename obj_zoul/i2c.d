@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 obj_zoul/i2c.o: /home/tianzheng/contiki/cpu/cc2538/dev/i2c.c \
  /home/tianzheng/contiki/cpu/cc2538/dev/i2c.h \
  /home/tianzheng/contiki/cpu/cc2538/./reg.h \
@@ -30,3 +31,37 @@ obj_zoul/i2c.o: /home/tianzheng/contiki/cpu/cc2538/dev/i2c.c \
  /home/tianzheng/contiki/cpu/cc2538/../arm/common/CMSIS/core_cmInstr.h :
  /home/tianzheng/contiki/cpu/cc2538/../arm/common/CMSIS/cmsis_gcc.h :
  /home/tianzheng/contiki/cpu/cc2538/../arm/common/CMSIS/core_cmFunc.h :
+=======
+obj_zoul/i2c.o: /home/muhua/contiki/cpu/cc2538/dev/i2c.c \
+ /home/muhua/contiki/cpu/cc2538/dev/i2c.h \
+ /home/muhua/contiki/cpu/cc2538/./reg.h \
+ /home/muhua/contiki/cpu/cc2538/dev/sys-ctrl.h \
+ /home/muhua/contiki/cpu/cc2538/dev/gpio.h \
+ /home/muhua/contiki/cpu/cc2538/dev/ioc.h \
+ /home/muhua/contiki/core/sys/clock.h \
+ /home/muhua/contiki/platform/zoul/./contiki-conf.h \
+ /home/muhua/contiki/platform/zoul/remote-revb/board.h \
+ /home/muhua/contiki/cpu/cc2538/./dev/gpio.h \
+ /home/muhua/contiki/cpu/cc2538/./dev/nvic.h \
+ /home/muhua/contiki/cpu/cc2538/./cc2538_cm3.h \
+ /home/muhua/contiki/cpu/cc2538/../arm/common/CMSIS/core_cm3.h \
+ /home/muhua/contiki/cpu/cc2538/../arm/common/CMSIS/core_cmInstr.h \
+ /home/muhua/contiki/cpu/cc2538/../arm/common/CMSIS/cmsis_gcc.h \
+ /home/muhua/contiki/cpu/cc2538/../arm/common/CMSIS/core_cmFunc.h
+/home/muhua/contiki/cpu/cc2538/dev/i2c.c :
+ /home/muhua/contiki/cpu/cc2538/dev/i2c.h :
+ /home/muhua/contiki/cpu/cc2538/./reg.h :
+ /home/muhua/contiki/cpu/cc2538/dev/sys-ctrl.h :
+ /home/muhua/contiki/cpu/cc2538/dev/gpio.h :
+ /home/muhua/contiki/cpu/cc2538/dev/ioc.h :
+ /home/muhua/contiki/core/sys/clock.h :
+ /home/muhua/contiki/platform/zoul/./contiki-conf.h :
+ /home/muhua/contiki/platform/zoul/remote-revb/board.h :
+ /home/muhua/contiki/cpu/cc2538/./dev/gpio.h :
+ /home/muhua/contiki/cpu/cc2538/./dev/nvic.h :
+ /home/muhua/contiki/cpu/cc2538/./cc2538_cm3.h :
+ /home/muhua/contiki/cpu/cc2538/../arm/common/CMSIS/core_cm3.h :
+ /home/muhua/contiki/cpu/cc2538/../arm/common/CMSIS/core_cmInstr.h :
+ /home/muhua/contiki/cpu/cc2538/../arm/common/CMSIS/cmsis_gcc.h :
+ /home/muhua/contiki/cpu/cc2538/../arm/common/CMSIS/core_cmFunc.h :
+>>>>>>> ye-li
