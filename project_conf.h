@@ -35,7 +35,7 @@
 #define DESTINATION 0x01
 
 /*OUTPUT*/
-#define DATA_PAY "Temperature: %d.\nLuminance: %d."
+#define DATA_PAY "Temperature: %d Luminance: %d"
 
 #endif  // PROJECT_CONF_H
 
