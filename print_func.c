@@ -15,11 +15,12 @@ void printDiscoveryTable(struct DISCOVERY_TABLE *discoveryTable)
     {
         if(discoveryTable[i].valid!= 0)
         {
-            printf("\n    {ID:%d; Src:%d; Dest:%d; Snd:%d;}",
+            printf("\n    {ID:%d; Src:%d; Dest:%d; Snd:%d; Age:%d}",
                     discoveryTable[i].id,
                     discoveryTable[i].src.u8[1],
                     discoveryTable[i].dest.u8[1],
-                    discoveryTable[i].snd.u8[1]);
+                    discoveryTable[i].snd.u8[1],
+					discoveryTable[i].age);
             flag++;
         }
     }

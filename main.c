@@ -23,8 +23,8 @@ static struct unicast_conn ack_conn;
 static void addEntryToDiscoveryTable(struct DISCOVERY_TABLE* req_info);
 static char updateRoutingTable(struct REP_PACKAGE *rep, const linkaddr_t *from);
 static void clearDiscovery(struct REP_PACKAGE* rep);
-char addToWaitingTable(struct DATA_PACKAGE *data);
-char addToWaitingAckTable(struct DATA_PACKAGE *data);
+void addToWaitingTable(struct DATA_PACKAGE *data);
+void addToWaitingAckTable(struct DATA_PACKAGE *data);
 
 static char isDuplicateReq(struct REQ_PACKAGE* req);
 
@@ -226,7 +226,7 @@ PROCESS_THREAD(aging_process, ev, data)
 
     while(1)
     {
-        etimer_set(&et, CLOCK_CONF_SECOND);
+        etimer_set(&et, CLOCK_CONF_SECOND * TIME_FACTOR);
 
         PROCESS_WAIT_EVENT_UNTIL(ev != sensors_event);
 
@@ -261,6 +261,7 @@ PROCESS_THREAD(aging_process, ev, data)
         {
             if(discoveryTable[i].age > 0 && discoveryTable[i].valid ==1)
             {
+            	discoveryTable[i].age --;
                 // if age has run out (route request too old)
                 if(discoveryTable[i].age == 0)
                 {
@@ -269,7 +270,7 @@ PROCESS_THREAD(aging_process, ev, data)
                             discoveryTable[i].src.u8[1], discoveryTable[i].dest.u8[1], discoveryTable[i].id);
                     flag++;
                 }
-                discoveryTable[i].age --;
+
             }
         }
         if (flag != 0)  // if the discovery table has changed
@@ -384,7 +385,7 @@ static void reply_callback(struct unicast_conn *c, const linkaddr_t *from)
 {
 //	char packet[REP_LEN];
 //    void *packet;
-	static char rep_packet[REP_LEN];
+	static char rep_packet[] = "REPLY;ID:00;SRC:0;DEST:0;HOP:0;RSSI:000";
     static struct REP_PACKAGE rep;
     static int i;
 
@@ -431,7 +432,7 @@ static void request_callback(struct broadcast_conn *c, const linkaddr_t *from)
 	static struct DISCOVERY_TABLE req_info;
     static struct REQ_PACKAGE req;
     static struct REP_PACKAGE rep;
-    static char req_packet[REQ_LEN];
+    static char req_packet[] = "REQUEST;ID:00;SRC:0;DEST:0";
     //static char packet[REQ_LEN];
 
     printf("\n--------Request received--------\n");
@@ -504,7 +505,14 @@ static void addEntryToDiscoveryTable(struct DISCOVERY_TABLE* req_info)
 /**
  * Add the data to the waiting table
  */
-char addToWaitingTable(struct DATA_PACKAGE *data){
+void addToWaitingTable(struct DATA_PACKAGE *data){
+	for(int i=0; i<MAX_WAIT_DATA; i++) {
+	        if(waitingTable[i].data_pkg.src.u8[1] == data->src.u8[1]
+	        		&& waitingTable[i].data_pkg.id == data->id
+					&& waitingTable[i].valid == 1) {
+	            return;
+	        }
+	    }
     for(int i=0; i<MAX_WAIT_DATA; i++) {
         if(waitingTable[i].valid == 0) {
         	printf("Add data into (route) waiting table.\n");
@@ -512,17 +520,23 @@ char addToWaitingTable(struct DATA_PACKAGE *data){
             waitingTable[i].age = MAX_QUEUEING_TIME;
             waitingTable[i].valid = 1;
             printWaitingTable(waitingTable);
-            return 1;
+            return;
         }
     }
     printf("There is no more space in waiting table.\n");
-    return 0;
 }
 
 /**
  * Add the data to the waiting table waiting for acknowledge
  */
-char addToWaitingAckTable(struct DATA_PACKAGE *data){
+void addToWaitingAckTable(struct DATA_PACKAGE *data){
+	for(int i=0; i<MAX_WAIT_DATA; i++) {
+		if(waitingTable[i].data_pkg.src.u8[1] == data->src.u8[1]
+				&& waitingTable[i].data_pkg.id == data->id
+				&& waitingTable[i].valid == 1) {
+			return;
+		}
+	}
     for(int i=0; i<MAX_WAIT_DATA; i++) {
         if(waitingTable[i].valid == 0) {
         	printf("Add data into ack waiting table.\n");
@@ -530,11 +544,11 @@ char addToWaitingAckTable(struct DATA_PACKAGE *data){
             waitingTable[i].age = MAX_ACK_WAIT_TIME;
             waitingTable[i].valid = 1;
             //printWaitingTable(waitingTable);
-            return 1;
+            return;
         }
     }
     printf("There is no more space in waiting table.\n");
-    return 0;
+    return;
 }
 
 /**
@@ -670,12 +684,14 @@ static void senddata(struct DATA_PACKAGE *data, int next){
  */
 static void sendreq(struct REQ_PACKAGE* req)
 {
-    static char packet[REQ_LEN];
+    static char packet[] = "REQUEST;ID:00;SRC:0;DEST:0";
 
     printf("\n--------Request sending--------\n");
 
     req2packet(req, packet);
     printf("Send request packet: %s\n", packet);
+    //printf("size of req is % d\n", sizeof(req));
+    //printf("size of struct REQ_PACKAGE is %d\n", sizeof(struct REQ_PACKAGE));
     packetbuf_clear();
     packetbuf_copyfrom(packet, REQ_LEN);
     broadcast_send(&req_conn);

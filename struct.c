@@ -20,9 +20,9 @@ void rep2packet(struct REP_PACKAGE* rep, char* packet){
 
 /*----------packet to struct------*/
 int packet2data(char* package, struct DATA_PACKAGE* data){
-	static char id[2];
-	static char src[1];
-	static char dest[1];
+	static char id[] = "00";
+	static char src[] = "0";
+	static char dest[] = "0";
 	printf("--------packet2data--------\n");
 	if(strncmp(package, "DATA", 4) == 0){
 		printf("Is data!\n");
@@ -47,7 +47,7 @@ int packet2data(char* package, struct DATA_PACKAGE* data){
 
 int packet2ack(char* package, struct ACK_PACKAGE* ack){
 	static char id[] = "00";
-	static char src[1];
+	static char src[] = "0";
 	printf("--------packet2ack--------\n");
 	if(strncmp(package, "ACK", 3) == 0){
 		printf("Is ack!\n");
@@ -66,9 +66,9 @@ int packet2ack(char* package, struct ACK_PACKAGE* ack){
 }
 
 int packet2req(char* package, struct REQ_PACKAGE* req){
-	static char id[2];
-	static char src[1];
-	static char dest[1];
+	static char id[] = "00";
+	static char src[] ="0";
+	static char dest[] = "0";
 	printf("--------packet2req--------\n");
 	if(strncmp(package, "REQUEST", 7) == 0){
 		printf("Is request!\n");
@@ -90,11 +90,11 @@ int packet2req(char* package, struct REQ_PACKAGE* req){
 }
 
 int packet2rep(char* package, struct REP_PACKAGE* rep){
-	static char id[2];
-	static char src[1];
-	static char dest[1];
-	static char hop[1];
-	static char rssi[3];
+	static char id[] = "00";
+	static char src[] = "0";
+	static char dest[] = "0";
+	static char hop[] = "0";
+	static char rssi[] = "000";
 	printf("--------packet2rep--------\n");
 	if(strncmp(package, "REPLY", 5) == 0){
 		printf("Is reply!\n");
