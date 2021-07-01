@@ -20,9 +20,9 @@ void rep2packet(struct REP_PACKAGE* rep, char* packet){
 
 /*----------packet to struct------*/
 int packet2data(char* package, struct DATA_PACKAGE* data){
-	static char id[2];
-	static char src[1];
-	static char dest[1];
+	static char id[] = "00";
+	static char src[] = "0";
+	static char dest[] = "0";
 	printf("--------packet2data--------\n");
 	if(strncmp(package, "DATA", 4) == 0){
 		printf("Is data!\n");
@@ -46,8 +46,8 @@ int packet2data(char* package, struct DATA_PACKAGE* data){
 }
 
 int packet2ack(char* package, struct ACK_PACKAGE* ack){
-	static char id[2];
-	static char src[1];
+	static char id[] = "00";
+	static char src[] = "0";
 	printf("--------packet2ack--------\n");
 	if(strncmp(package, "ACK", 3) == 0){
 		printf("Is ack!\n");
@@ -58,7 +58,6 @@ int packet2ack(char* package, struct ACK_PACKAGE* ack){
 		//src
 		src[0] = package[14];
 		ack->src.u8[1] = atoi(src);
-
 		return 1;
 	}
 	printf("Not ack!\n");
@@ -67,9 +66,9 @@ int packet2ack(char* package, struct ACK_PACKAGE* ack){
 }
 
 int packet2req(char* package, struct REQ_PACKAGE* req){
-	static char id[2];
-	static char src[1];
-	static char dest[1];
+	static char id[] = "00";
+	static char src[] = "0";
+	static char dest[] = "0";
 	printf("--------packet2req--------\n");
 	if(strncmp(package, "REQUEST", 7) == 0){
 		printf("Is request!\n");
@@ -83,7 +82,6 @@ int packet2req(char* package, struct REQ_PACKAGE* req){
 		//dest
 		dest[0] = package[25];
 		req->dest.u8[1] = atoi(dest);
-
 		return 1;
 	}
 	printf("Not request!\n");
@@ -92,35 +90,25 @@ int packet2req(char* package, struct REQ_PACKAGE* req){
 }
 
 int packet2rep(char* package, struct REP_PACKAGE* rep){
-	static char id[2];
-	static char src[1];
-	static char dest[1];
-	static char hop[1];
-	static char rssi[3];
+	static char id[] = "00";
+	static char src[] = "0";
+	static char dest[] = "0";
+	static char hop[] = "0";
+	static char rssi[] = "000";
 	printf("--------packet2rep--------\n");
 	if(strncmp(package, "REPLY", 5) == 0){
 		printf("Is reply!\n");
-		printf("package is %s\n", package);
 		// id
 		id[0] = package[9];
 		id[1] = package[10];
 		rep->id = atoi(id);
-		printf("9.item of package is %s, 10.item of package is:%s\n", package[9], package[10]);
-		printf("id is %d\n", rep->id);
 		//src
 		src[0] = package[16];
-		int source = atoi(src);
-		rep->src.u8[0] = 0xFF;
+		rep->src.u8[0] = 0x00;
 		rep->src.u8[1] = atoi(src);
-		printf("src[0] %s\n", src[0]);
-		printf("source is %d\n", source);
-		printf("16.item of package is %s\n", package[16]);
-		printf("scr.u8[1] is %d\n", rep->src.u8[1]);
 		//dest
 		dest[0] = package[23];
 		rep->dest.u8[1] = atoi(dest);
-		printf("25.item of package is %s\n", package[25]);
-		printf("dest.u8[1] is %d\n", rep->dest.u8[1]);
 		//hop
 		hop[0] = package[29];
 		rep->hops = atoi(hop);

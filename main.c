@@ -23,8 +23,8 @@ static struct unicast_conn ack_conn;
 static void addEntryToDiscoveryTable(struct DISCOVERY_TABLE* req_info);
 static char updateRoutingTable(struct REP_PACKAGE *rep, const linkaddr_t *from);
 static void clearDiscovery(struct REP_PACKAGE* rep);
-char addToWaitingTable(struct DATA_PACKAGE *data);
-char addToWaitingAckTable(struct DATA_PACKAGE *data);
+void addToWaitingTable(struct DATA_PACKAGE *data);
+void addToWaitingAckTable(struct DATA_PACKAGE *data);
 
 static char isDuplicateReq(struct REQ_PACKAGE* req);
 
@@ -226,7 +226,7 @@ PROCESS_THREAD(aging_process, ev, data)
 
     while(1)
     {
-        etimer_set(&et, CLOCK_CONF_SECOND);
+        etimer_set(&et, CLOCK_CONF_SECOND*TIME_FACTOR);
 
         PROCESS_WAIT_EVENT_UNTIL(ev != sensors_event);
 
@@ -261,6 +261,7 @@ PROCESS_THREAD(aging_process, ev, data)
         {
             if(discoveryTable[i].age > 0 && discoveryTable[i].valid ==1)
             {
+                discoveryTable[i].age --;
                 // if age has run out (route request too old)
                 if(discoveryTable[i].age == 0)
                 {
@@ -269,7 +270,6 @@ PROCESS_THREAD(aging_process, ev, data)
                             discoveryTable[i].src.u8[1], discoveryTable[i].dest.u8[1], discoveryTable[i].id);
                     flag++;
                 }
-                discoveryTable[i].age --;
             }
         }
         if (flag != 0)  // if the discovery table has changed
@@ -285,6 +285,7 @@ PROCESS_THREAD(aging_process, ev, data)
                 if (next != 0)  // if the request in the waiting table find a route
                 {
                     senddata(&waitingTable[i].data_pkg, next);
+                    waitingTable[i].valid = 0;
                     addToWaitingAckTable(&waitingTable[i].data_pkg);
                     flag++;
                 }
@@ -311,13 +312,13 @@ PROCESS_THREAD(aging_process, ev, data)
 static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
     static struct DATA_PACKAGE data;
     static struct ACK_PACKAGE ack;
-    char data_packet[DATA_LEN];
-//    char *packet;
+//    char data_packet[DATA_LEN];
+    static char data_packet[DATA_LEN];
 
     printf("\n--------Data received--------\n");
 
-    strncpy(data_packet, (char *)packetbuf_dataptr(), DATA_LEN);
-//    packetbuf_copyto(packet);
+    //strncpy(data_packet, (char *)packetbuf_dataptr(), DATA_LEN);
+    packetbuf_copyto(&data_packet);
 
     printf("Received data: %s\n", data_packet);
 
@@ -348,22 +349,22 @@ static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
 
 static void ack_callback(struct unicast_conn *c, const linkaddr_t *from){
     static struct ACK_PACKAGE ack;
-    char packet[ACK_LEN];
-//    char *packet;
+//    char packet[ACK_LEN];
+    static char ack_packet[] = "ACK;ID:00;SRC:0";
 
     printf("\n--------Ack received--------\n");
 
-    strncpy(packet, (char *)packetbuf_dataptr(), ACK_LEN);
-//    packetbuf_copyto(packet);
+//    strncpy(packet, (char *)packetbuf_dataptr(), ACK_LEN);
+    packetbuf_copyto(&ack_packet);
 
-    printf("Received ack: %s\n", packet);
+    printf("Received ack: %s\n", ack_packet);
 
-    if(packet2ack(packet, &ack) != 0){
+    if(packet2ack(ack_packet, &ack) != 0){
     	packetbuf_clear();
-
     	for(int i = 0; i < MAX_WAIT_DATA; i++){
     		if(waitingTable[i].data_pkg.id == ack.id
     				&& waitingTable[i].data_pkg.src.u8[1] == ack.src.u8[1]){
+
     			waitingTable[i].valid = 0;
     			printWaitingTable(waitingTable);
     		}
@@ -371,7 +372,7 @@ static void ack_callback(struct unicast_conn *c, const linkaddr_t *from){
     }
     // case not ack package
     else{
-        printf("Incorrect ack package: %s\n", packet);
+        printf("Incorrect ack package: %s\n", ack_packet);
     }
     packetbuf_clear();
 }
@@ -381,20 +382,21 @@ static void ack_callback(struct unicast_conn *c, const linkaddr_t *from){
  */
 static void reply_callback(struct unicast_conn *c, const linkaddr_t *from)
 {
-	char packet[REP_LEN];
+//	char packet[REP_LEN];
 //    void *packet;
+	static char rep_packet[] = "REPLY;ID:00;SRC:0;DEST:0;HOP:0;RSSI:000";
     static struct REP_PACKAGE rep;
     static int i;
 
     printf("\n--------Reply received--------\n");
 
-    strncpy(packet, (char *)packetbuf_dataptr(), REP_LEN);
-//    packetbuf_copyto(packet);
+    //strncpy(packet, (char *)packetbuf_dataptr(), REP_LEN);
+    packetbuf_copyto(&rep_packet);
 
-    printf("Received reply: %s\n", packet);
+    printf("Received reply: %s\n", rep_packet);
 
     // if REPLY package received
-    if(packet2rep(packet, &rep)!=0)
+    if(packet2rep(rep_packet, &rep)!=0)
     {
     	packetbuf_clear();
         printf("REPLY received from %d [ID:%d, Dest:%d, Src:%d, Hops:%d, RSSI: %d]\n",
@@ -429,16 +431,16 @@ static void request_callback(struct broadcast_conn *c, const linkaddr_t *from)
 	static struct DISCOVERY_TABLE req_info;
     static struct REQ_PACKAGE req;
     static struct REP_PACKAGE rep;
-//    static void *packet;
-    static char packet[REQ_LEN];
+    static char req_packet[] = "REQUEST;ID:00;SRC:0;DEST:0";
+    //static char packet[REQ_LEN];
 
     printf("\n--------Request received--------\n");
-//    packetbuf_copyto(packet);
-    strncpy(packet, (char *)packetbuf_dataptr(), REQ_LEN);
-    printf("Received request: %s\n", packet);
+    packetbuf_copyto(&req_packet);
+    //strncpy(packet, (char *)packetbuf_dataptr(), REQ_LEN);
+    printf("Received request: %s\n", req_packet);
 
     // case REQUEST package received
-    if(packet2req(packet, &req) != 0)
+    if(packet2req(req_packet, &req) != 0)
     {
     	packetbuf_clear();
         printf("ROUTE_REQUEST received from %d [ID:%d, Dest:%d, Src:%d]\n",
@@ -502,37 +504,52 @@ static void addEntryToDiscoveryTable(struct DISCOVERY_TABLE* req_info)
 /**
  * Add the data to the waiting table
  */
-char addToWaitingTable(struct DATA_PACKAGE *data){
+void addToWaitingTable(struct DATA_PACKAGE *data){
     for(int i=0; i<MAX_WAIT_DATA; i++) {
-        if(waitingTable[i].valid == 0) {
-        	printf("Add data into waiting table.\n");
-            waitingTable[i].data_pkg = *data;
-            waitingTable[i].age = MAX_QUEUEING_TIME;
-            waitingTable[i].valid = 1;
-            printWaitingTable(waitingTable);
-            return 1;
-        }
+    	if(waitingTable[i].data_pkg.src.u8[1] == data->src.u8[1]
+    			&& waitingTable[i].data_pkg.id == data->id
+				&& waitingTable[i].valid == 1){
+    		printf("Same data already exists in waiting table.\n");
+    		return;
+    	}
     }
+    for(int i = 0; i < MAX_WAIT_DATA; i++){
+    	if(waitingTable[i].valid == 0) {
+    		printf("Add data into (route) waiting table.\n");
+    		waitingTable[i].data_pkg = *data;
+    		waitingTable[i].age = MAX_QUEUEING_TIME;
+    	 	waitingTable[i].valid = 1;
+    	 	printWaitingTable(waitingTable);
+    	 	return;
+    	}
+    }
+
     printf("There is no more space in waiting table.\n");
-    return 0;
 }
 
 /**
  * Add the data to the waiting table waiting for acknowledge
  */
-char addToWaitingAckTable(struct DATA_PACKAGE *data){
+void addToWaitingAckTable(struct DATA_PACKAGE *data){
     for(int i=0; i<MAX_WAIT_DATA; i++) {
-        if(waitingTable[i].valid == 0) {
-        	printf("Add data into waiting table.\n");
-            waitingTable[i].data_pkg = *data;
-            waitingTable[i].age = MAX_ACK_WAIT_TIME;
-            waitingTable[i].valid = 1;
-            printWaitingTable(waitingTable);
-            return 1;
-        }
+    	if(waitingTable[i].data_pkg.src.u8[1] == data->src.u8[1]
+    			&& waitingTable[i].data_pkg.id == data->id
+				&& waitingTable[i].valid == 1){
+    	 	printf("Same data already exists in waiting table.\n");
+    		return;
+    	}
+    }
+    for(int i = 0; i < MAX_WAIT_DATA; i++){
+    	if(waitingTable[i].valid == 0) {
+    		printf("Add data into ack waiting table.\n");
+    		waitingTable[i].data_pkg = *data;
+    		waitingTable[i].age = MAX_ACK_WAIT_TIME;
+    		waitingTable[i].valid = 1;
+    		//printWaitingTable(waitingTable);
+    		return;
+    	}
     }
     printf("There is no more space in waiting table.\n");
-    return 0;
 }
 
 /**
@@ -573,7 +590,7 @@ static void clearDiscovery(struct REP_PACKAGE *rep)
     for(i=0; i<MAX_TABLE_SIZE; i++){
         if(discoveryTable[i].valid != 0
             && discoveryTable[i].id == rep->id
-           // && discoveryTable[i].src == rep->src        // enable for ditinguish on reply id
+            && discoveryTable[i].src.u8[1] == rep->src.u8[1]        // enable for ditinguish on reply id
             && discoveryTable[i].dest.u8[1] == rep->dest.u8[1])
                 discoveryTable[i].valid = 0;
     }
@@ -648,7 +665,7 @@ static void senddata(struct DATA_PACKAGE *data, int next){
 
     static linkaddr_t next_addr;
     next_addr.u8[1]=next;
-    next_addr.u8[0]=0;
+    next_addr.u8[0]=0x00;
 
     printf("\n--------Data sending--------\n");
 
@@ -657,7 +674,7 @@ static void senddata(struct DATA_PACKAGE *data, int next){
     packetbuf_clear();
     packetbuf_copyfrom(packet, DATA_LEN);
     unicast_send(&data_conn, &next_addr);
-    packetbuf_clear();
+    //packetbuf_clear();
 
     printf("Sending DATA {%s} to %d via %d \n",
             data->message, data->dest.u8[1], next);
@@ -677,7 +694,7 @@ static void sendreq(struct REQ_PACKAGE* req)
     packetbuf_clear();
     packetbuf_copyfrom(packet, REQ_LEN);
     broadcast_send(&req_conn);
-    packetbuf_clear();
+    //packetbuf_clear();
 
     printf("Broadcasting Request to %d with ID:%d and Source:%d\n",req->dest.u8[1], req->id, req->src.u8[1]);
 
@@ -701,7 +718,7 @@ static void sendrep(struct REP_PACKAGE* rep, int next)
     packetbuf_clear();
     packetbuf_copyfrom(packet, REP_LEN);
     unicast_send(&rep_conn, &to_rimeaddr);
-    packetbuf_clear();
+    //packetbuf_clear();
 
     printf("Sending ROUTE_REPLY toward %d via %d [ID:%d, Dest:%d, Src:%d, Hops:%d]\n",
             rep->src.u8[1], next, rep->id, rep->dest.u8[1], rep->src.u8[1], rep->hops);
@@ -721,7 +738,7 @@ static void sendack(struct ACK_PACKAGE *ack, int pre){
 	packetbuf_clear();
 	packetbuf_copyfrom(packet, ACK_LEN);
 	unicast_send(&ack_conn, &pre_addr);
-	packetbuf_clear();
+	//packetbuf_clear();
 
 	printf("Sending ACK to %d\n", pre);
 }
