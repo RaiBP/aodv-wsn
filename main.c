@@ -285,6 +285,7 @@ PROCESS_THREAD(aging_process, ev, data)
                 if (next != 0)  // if the request in the waiting table find a route
                 {
                     senddata(&waitingTable[i].data_pkg, next);
+                    addToWaitingAckTable(&waitingTable[i].data_pkg);
                     flag++;
                 }
                 else
@@ -647,7 +648,7 @@ static void senddata(struct DATA_PACKAGE *data, int next){
 
     static linkaddr_t next_addr;
     next_addr.u8[1]=next;
-    next_addr.u8[0]=0xFF;
+    next_addr.u8[0]=0;
 
     printf("\n--------Data sending--------\n");
 
@@ -711,7 +712,7 @@ static void sendack(struct ACK_PACKAGE *ack, int pre){
 
 	static linkaddr_t pre_addr;
 	pre_addr.u8[1]=pre;
-	pre_addr.u8[0]=0xFF;
+	pre_addr.u8[0]=0;
 
 	printf("\n--------Ack sending--------\n");
 
