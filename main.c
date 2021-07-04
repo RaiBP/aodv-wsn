@@ -131,6 +131,10 @@ PROCESS_THREAD(data_process, ev, data){
 			data_pkg.src.u8[0] = linkaddr_node_addr.u8[0];
 			data_pkg.src.u8[1] = linkaddr_node_addr.u8[1];
 			sprintf(data_pkg.message, DATA_PAY, getTemperatureValue(), getLuxValue());
+			data_pkg.hops = 0;
+			data_pkg.route[6] = "000000";
+			data_pkg.route[0] = linkaddr_node_addr.u8[1];
+			//printf("route is %d\n", data_pkg.route[0]);
 
 			id = (id<99) ? id+1 : 1;
 
@@ -145,6 +149,13 @@ PROCESS_THREAD(data_process, ev, data){
 			data_pkg.src.u8[0] = ((struct DATA_PACKAGE*)data)->src.u8[0];
 			data_pkg.src.u8[1] = ((struct DATA_PACKAGE*)data)->src.u8[1];
 			strcpy(data_pkg.message,((struct DATA_PACKAGE*)data)->message);
+			data_pkg.hops = ((struct DATA_PACKAGE*)data)->hops + 1;
+			int h = data_pkg.hops;
+			printf("hops in this forwarding data is %d\n",h);
+			if (data_pkg.route[h-1] != linkaddr_node_addr.u8[1]){
+				data_pkg.route[h] = linkaddr_node_addr.u8[1];
+			}
+			printf("route is %d\n", data_pkg.route[1]);
 		}
 
 
@@ -154,6 +165,7 @@ PROCESS_THREAD(data_process, ev, data){
 			// If the route exists
 			if(next!=0){
 				printf("Sending message: %s\n", data_pkg.message);
+				printf("route:%d,%d\n",data_pkg.route[0],data_pkg.route[1]);
 				senddata(&data_pkg, next);
 				// add to waiting table wait for ack
 				addToWaitingAckTable(&data_pkg);
@@ -328,7 +340,8 @@ static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
         // if the destination is itself
     	packetbuf_clear();
         if(data.dest.u8[1] == linkaddr_node_addr.u8[1]){
-            printf("DATA RECEIVED of src %d:\n{%s}\n", data.src.u8[1], data.message);
+            printf("DATA RECEIVED of src %d:\n{%s}\n with Route:{%d,%d,%d,%d,%d,%d}\n", data.src.u8[1], data.message,
+            		data.route[0], data.route[1], data.route[2], data.route[3], data.route[4], data.route[5]);
         }
         // otherwise
         else{
@@ -715,7 +728,7 @@ static void sendrep(struct REP_PACKAGE* rep, int next)
     printf("\n--------Reply sending--------\n");
 
     rep2packet(rep, packet);
-    printf("Send request packet: %s\n", packet);
+    printf("Send reply packet: %s\n", packet);
     packetbuf_clear();
     packetbuf_copyfrom(packet, REP_LEN);
     unicast_send(&rep_conn, &to_rimeaddr);

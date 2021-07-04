@@ -6,12 +6,12 @@
 #ifndef STRUCT_H
 #define STRUCT_H
 
-#define DATA "DATA;ID:%2d;SRC:%1d;DEST:%1d;PAYLOAD:%s"
+#define DATA "DATA;ID:%2d;SRC:%1d;DEST:%1d;PAYLOAD:%s;ROUTE:%1d,%1d,%1d,%1d,%1d,%1d"
 #define ACK "ACK;ID:%2d;SRC:%1d"
 #define REQ "REQUEST;ID:%2d;SRC:%1d;DEST:%1d"
 #define REP "REPLY;ID:%2d;SRC:%1d;DEST:%1d;HOP:%1d;RSSI:%3d"
 
-#define DATA_LEN sizeof(DATA)-1 - 7 + DATA_PAYLOAD_LEN
+#define DATA_LEN sizeof(DATA)-1 - 15 + DATA_PAYLOAD_LEN
 #define ACK_LEN sizeof(ACK)-1 - 3
 #define REQ_LEN sizeof(REQ)-1 - 5
 #define REP_LEN sizeof(REP)-1 - 7
@@ -24,6 +24,8 @@ struct DATA_PACKAGE{
 	linkaddr_t src;
 	linkaddr_t dest;
 	char message[DATA_LEN];
+	char route[MAX_NODES - 1];
+	int hops;
 };
 
 /**

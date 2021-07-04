@@ -6,7 +6,8 @@
 
 /*----------struct to packet------*/
 void data2packet(struct DATA_PACKAGE* data, char* packet){
-    sprintf(packet, DATA, data->id, data->src.u8[1], data->dest.u8[1], data->message);
+    sprintf(packet, DATA, data->id, data->src.u8[1], data->dest.u8[1], data->message,
+    		data->route[0], data->route[1], data->route[2], data->route[3], data->route[4], data->route[5]);
 }
 void ack2packet(struct ACK_PACKAGE* ack, char* packet){
 	sprintf(packet, ACK, ack->id, ack->src.u8[1]);
@@ -36,8 +37,15 @@ int packet2data(char* package, struct DATA_PACKAGE* data){
 		// dest
 		dest[0] = package[22];
 		data->dest.u8[1] = atoi(dest);
+		// route
+		data->route[0] = package[71] - 48;
+		data->route[1] = package[73] - 48;
+		data->route[2] = package[75] - 48;
+		data->route[3] = package[77] - 48;
+		data->route[4] = package[79] - 48;
+		data->route[5] = package[81] - 48;
 		//message
-		strncpy(data->message, package+32, DATA_PAYLOAD_LEN);
+		strncpy(data->message, package+32, DATA_PAYLOAD_LEN - 5);
 
 	    return 1;
 	}
