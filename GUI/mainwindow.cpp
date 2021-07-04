@@ -109,7 +109,7 @@ void MainWindow::receive()
     if(!data_list.isEmpty()){
         qDebug() << "received data: " << data;
         qDebug() << "data_list(0): " << data_list.at(0);
-        if(data_list.at(0) == "DATA"){      // data is received     DATA;ID:%2d;SRC:%1d;DEST:%1d;PAYLOAD:%s
+        if(data_list.at(0) == "\n--------Data received--------\nReceived data: DATA"){      // data is received     DATA;ID:%2d;SRC:%1d;DEST:%1d;PAYLOAD:%s
             for(int i=1; i < data_list.size(); i++){
                 qDebug() << "data list value " << i << " " << data_list.at(i);
                 QString str = data_list.at(i);

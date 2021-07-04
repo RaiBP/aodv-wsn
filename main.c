@@ -3,6 +3,7 @@
 #include "dev/leds.h"
 #include "dev/zoul-sensors.h"  // Sensor functions
 #include "dev/adc-zoul.h"
+#include "dev/cc2538-rf.h"
 
 #include <stdio.h>  // For printf
 #include <stdlib.h>
@@ -143,6 +144,7 @@ PROCESS_THREAD(data_process, ev, data){
 		}
 		// Forward data
 		else{
+			printf("Forwarding data...\n");
 			data_pkg.dest.u8[0] = ((struct DATA_PACKAGE*)data)->dest.u8[0];
 			data_pkg.dest.u8[1] = ((struct DATA_PACKAGE*)data)->dest.u8[1];
 			data_pkg.id = ((struct DATA_PACKAGE*)data)->id;
@@ -152,10 +154,22 @@ PROCESS_THREAD(data_process, ev, data){
 			data_pkg.hops = ((struct DATA_PACKAGE*)data)->hops + 1;
 			int h = data_pkg.hops;
 			printf("hops in this forwarding data is %d\n",h);
-			if (data_pkg.route[h-1] != linkaddr_node_addr.u8[1]){
+			printf("data package route now is:%d,%d,%d,%d,%d,%d\n",((struct DATA_PACKAGE*)data)->route[0],((struct DATA_PACKAGE*)data)->route[1],
+					((struct DATA_PACKAGE*)data)->route[2],((struct DATA_PACKAGE*)data)->route[3],((struct DATA_PACKAGE*)data)->route[4],
+					((struct DATA_PACKAGE*)data)->route[5]);
+
+			data_pkg.route[0] = ((struct DATA_PACKAGE*)data)->route[0];
+			data_pkg.route[1] = ((struct DATA_PACKAGE*)data)->route[1];
+			data_pkg.route[2] = ((struct DATA_PACKAGE*)data)->route[2];
+			data_pkg.route[3] = ((struct DATA_PACKAGE*)data)->route[3];
+			data_pkg.route[4] = ((struct DATA_PACKAGE*)data)->route[4];
+			data_pkg.route[5] = ((struct DATA_PACKAGE*)data)->route[5];
+			if(data_pkg.route[h-1] != linkaddr_node_addr.u8[1]){
 				data_pkg.route[h] = linkaddr_node_addr.u8[1];
 			}
-			printf("route is %d\n", data_pkg.route[1]);
+
+
+			printf("route is updated to %d,%d,%d,%d,%d,%d\n", data_pkg.route[0], data_pkg.route[1], data_pkg.route[2], data_pkg.route[3], data_pkg.route[4], data_pkg.route[5]);
 		}
 
 
@@ -164,8 +178,10 @@ PROCESS_THREAD(data_process, ev, data){
 
 			// If the route exists
 			if(next!=0){
+
+				printf("Route exists, so sending message\n");
 				printf("Sending message: %s\n", data_pkg.message);
-				printf("route:%d,%d\n",data_pkg.route[0],data_pkg.route[1]);
+				printf("The data package id is:%d, src is :%d\n",data_pkg.id,data_pkg.src.u8[1]);
 				senddata(&data_pkg, next);
 				// add to waiting table wait for ack
 				addToWaitingAckTable(&data_pkg);
@@ -412,21 +428,24 @@ static void reply_callback(struct unicast_conn *c, const linkaddr_t *from)
     // if REPLY package received
     if(packet2rep(rep_packet, &rep)!=0)
     {
-    	packetbuf_clear();
+    	//packetbuf_clear();
         printf("REPLY received from %d [ID:%d, Dest:%d, Src:%d, Hops:%d, RSSI: %d]\n",
                         from->u8[1], rep.id, rep.dest.u8[1], rep.src.u8[1], rep.hops, rep.rssi);
 
         // check if reply table updates
         if(updateRoutingTable(&rep, from))
         {
+
             // if the source is not me forward reply to all nodes waiting
             if(rep.src.u8[1] != linkaddr_node_addr.u8[1])
             {
+            	printf("the source is not me, so i am sending reply to:%d\n",rep.src.u8[1]);
                 rep.hops = rep.hops + 1;
                 for(i=0; i<MAX_TABLE_SIZE; i++){
                     if(discoveryTable[i].valid != 0
                         && discoveryTable[i].id == rep.id){
                             sendrep(&rep, discoveryTable[i].snd.u8[1]);
+                            printf("sending reply to %d\n",discoveryTable[i].snd.u8[1]);
                     }
                 }
             }
@@ -572,8 +591,8 @@ static char updateRoutingTable(struct REP_PACKAGE *rep, const linkaddr_t *from)
 {
 
     int16_t rssi = packetbuf_attr(PACKETBUF_ATTR_RSSI);
+    printf("rssi:%d\n",rssi);
     rssi = abs(rssi);
-    printf("Received RSSI: %d\n", rssi);
 
     rep->rssi = (rep->rssi * rep->hops + rssi) / (rep->hops + 1);
 
@@ -636,6 +655,10 @@ static int getTemperatureValue(){
  * Get the lux value from the sensor.
  */
 static int getLuxValue(){
+
+	/* Configure the ADC ports */
+	adc_zoul.configure(SENSORS_HW_INIT, ZOUL_SENSORS_ADC1 | ZOUL_SENSORS_ADC3);
+
 	float m =1.6009;
 	float b = 41.269;
 	static uint16_t adc3_value;
@@ -733,6 +756,7 @@ static void sendrep(struct REP_PACKAGE* rep, int next)
     packetbuf_copyfrom(packet, REP_LEN);
     unicast_send(&rep_conn, &to_rimeaddr);
     //packetbuf_clear();
+    printf("to_rimeaddr is now:%d\n", to_rimeaddr.u8[1]);
 
     printf("Sending ROUTE_REPLY toward %d via %d [ID:%d, Dest:%d, Src:%d, Hops:%d]\n",
             rep->src.u8[1], next, rep->id, rep->dest.u8[1], rep->src.u8[1], rep->hops);
