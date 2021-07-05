@@ -34,6 +34,7 @@ struct DATA_PACKAGE{
 struct ACK_PACKAGE{
 	int id;
 	linkaddr_t src;
+	linkaddr_t dest
 };
 
 /**
@@ -89,6 +90,15 @@ struct WAITING_TABLE{
     struct DATA_PACKAGE data_pkg;
     int age;
     int valid;
+};
+
+/**
+ * waiting ack table
+ */
+struct WAITING_ACK_TABLE{
+	struct DATA_PACKAGE data_pkg;
+	int age;
+	int valid;
 };
 
 /*----------struct to packet------*/

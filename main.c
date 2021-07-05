@@ -56,6 +56,7 @@ static int getNextHop();
 
 
 static struct WAITING_TABLE waitingTable[MAX_WAIT_DATA];
+static struct WAITING_ACK_TABLE waitingackTable[MAX_WAIT_DATA];
 static struct DISCOVERY_TABLE discoveryTable[MAX_TABLE_SIZE];
 static struct ROUTING_TABLE routingTable;
 
@@ -247,6 +248,7 @@ PROCESS_THREAD(aging_process, ev, data)
     static int flag;
     static int i;
     static int next;
+    static struct DISCOVERY_TABLE discovery;
 
     PROCESS_BEGIN();
 
@@ -332,6 +334,37 @@ PROCESS_THREAD(aging_process, ev, data)
         }
         if (flag != 0)  // if the waiting table has changed
             printWaitingTable(waitingTable);
+
+        // Refresh waiting ack table
+        flag = 0;
+        for(i=0; i<MAX_WAIT_DATA; i++)
+        {
+        	if(waitingackTable[i].valid != 0)
+        	{
+        		waitingackTable[i].age--;
+                if (waitingackTable[i].age < 0)
+                {
+                	waitingackTable[i].valid = 0;
+                    printf("There is now no more existing route to %d, so the node %d is going to request again from itself\n",
+                    		waitingackTable.data_pkg.dest.u8[1], linkaddr_node_addr.u8[1]);
+
+                    discovery.id = waitingackTable.data_pkg.id;
+                    discovery.src.u8[0] = linkaddr_node_addr.u8[0];
+                    discovery.src.u8[1] = linkaddr_node_addr.u8[1];
+                    discovery.dest.u8[0] = waitingackTable.data_pkg.dest.u8[0];
+                    discovery.dest.u8[1] = waitingackTable.data_pkg.dest.u8[1];
+                    discovery.snd.u8[0] = linkaddr_node_addr.u8[0];
+                    discovery.snd.u8[1] = linkaddr_node_addr.u8[1];
+
+                    process_post(&request_process, PROCESS_EVENT_CONTINUE, &discovery);
+                    flag++;
+                }
+
+            }
+        }
+
+        if (flag != 0)  // if the waiting table has changed
+        printWaitingackTable(waitingackTable);
     }
     PROCESS_END();
 }
@@ -369,6 +402,7 @@ static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
         ack.src = data.src;
         sendack(&ack, from->u8[1]);
 
+
     }
     // case not data package
     else{
@@ -392,11 +426,11 @@ static void ack_callback(struct unicast_conn *c, const linkaddr_t *from){
     if(packet2ack(ack_packet, &ack) != 0){
     	packetbuf_clear();
     	for(int i = 0; i < MAX_WAIT_DATA; i++){
-    		if(waitingTable[i].data_pkg.id == ack.id
-    				&& waitingTable[i].data_pkg.src.u8[1] == ack.src.u8[1]){
+    		if(waitingackTable[i].data_pkg.id == ack.id
+    				&& waitingackTable[i].data_pkg.src.u8[1] == ack.src.u8[1]){
 
-    			waitingTable[i].valid = 0;
-    			printWaitingTable(waitingTable);
+    			waitingackTable[i].valid = 0;
+    			printWaitingackTable(waitingackTable);
     		}
     	}
     }
@@ -563,23 +597,23 @@ void addToWaitingTable(struct DATA_PACKAGE *data){
  */
 void addToWaitingAckTable(struct DATA_PACKAGE *data){
 	for(int i=0; i<MAX_WAIT_DATA; i++) {
-		if(waitingTable[i].data_pkg.src.u8[1] == data->src.u8[1]
-				&& waitingTable[i].data_pkg.id == data->id
-				&& waitingTable[i].valid == 1) {
+		if(waitingackTable[i].data_pkg.src.u8[1] == data->src.u8[1]
+				&& waitingackTable[i].data_pkg.id == data->id
+				&& waitingackTable[i].valid == 1) {
 			return;
 		}
 	}
     for(int i=0; i<MAX_WAIT_DATA; i++) {
-        if(waitingTable[i].valid == 0) {
+        if(waitingackTable[i].valid == 0) {
         	printf("Add data into ack waiting table.\n");
-            waitingTable[i].data_pkg = *data;
-            waitingTable[i].age = MAX_ACK_WAIT_TIME;
-            waitingTable[i].valid = 1;
+            waitingackTable[i].data_pkg = *data;
+            waitingackTable[i].age = MAX_ACK_WAIT_TIME;
+            waitingackTable[i].valid = 1;
             //printWaitingTable(waitingTable);
             return;
         }
     }
-    printf("There is no more space in waiting table.\n");
+    printf("There is no more space in waiting ack table.\n");
     return;
 }
 
