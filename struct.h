@@ -24,7 +24,7 @@ struct DATA_PACKAGE{
 	linkaddr_t src;
 	linkaddr_t dest;
 	char message[DATA_LEN];
-	char route[MAX_NODES - 1];
+	char route[MAX_NODES];
 	int hops;
 };
 

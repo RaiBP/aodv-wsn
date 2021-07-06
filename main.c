@@ -346,13 +346,13 @@ PROCESS_THREAD(aging_process, ev, data)
                 {
                 	waitingackTable[i].valid = 0;
                     printf("There is now no more existing route to %d, so the node %d is going to request again from itself\n",
-                    		waitingackTable.data_pkg.dest.u8[1], linkaddr_node_addr.u8[1]);
+                    		waitingackTable[i].data_pkg.dest.u8[1], linkaddr_node_addr.u8[1]);
 
-                    discovery.id = waitingackTable.data_pkg.id;
+                    discovery.id = waitingackTable[i].data_pkg.id;
                     discovery.src.u8[0] = linkaddr_node_addr.u8[0];
                     discovery.src.u8[1] = linkaddr_node_addr.u8[1];
-                    discovery.dest.u8[0] = waitingackTable.data_pkg.dest.u8[0];
-                    discovery.dest.u8[1] = waitingackTable.data_pkg.dest.u8[1];
+                    discovery.dest.u8[0] = waitingackTable[i].data_pkg.dest.u8[0];
+                    discovery.dest.u8[1] = waitingackTable[i].data_pkg.dest.u8[1];
                     discovery.snd.u8[0] = linkaddr_node_addr.u8[0];
                     discovery.snd.u8[1] = linkaddr_node_addr.u8[1];
 
