@@ -35,7 +35,7 @@ typedef struct{
 	linkaddr_t src;
 	linkaddr_t dest;
 	char message[DATA_PAYLOAD_LEN];
-	char route[MAX_NODES];
+	linkaddr_t route[MAX_NODES];
 	uint8_t hops;
 }DATA_PACKAGE;
 

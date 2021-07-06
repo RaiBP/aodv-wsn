@@ -125,7 +125,7 @@ PROCESS_THREAD(data_process, ev, data){
 
 	  	// Send own data
 		if(ev == PROCESS_EVENT_TIMER && linkaddr_node_addr.u8[1]!=0x01){
-			printf("Generate new data.\n");
+			printf("\n--------Generate new data--------\n");
 			// Set message
 			strcpy(data_pkg.head, DATA_H);
 			data_pkg.dest.u8[0] = (DESTINATION >> 8) & 0xFF;
@@ -135,8 +135,8 @@ PROCESS_THREAD(data_process, ev, data){
 			data_pkg.src.u8[1] = linkaddr_node_addr.u8[1];
 			sprintf(data_pkg.message, DATA_PAY, getTemperatureValue(), getLuxValue());
 			data_pkg.hops = 0;
-			data_pkg.route[0] = linkaddr_node_addr.u8[1];
-			printf("route is %d,%d\n", data_pkg.route[0], data_pkg.route[1]);
+			data_pkg.route[0].u8[1] = linkaddr_node_addr.u8[1];
+			printf("route is %d,%d,%d,%d,%d,%d\n", data_pkg.route[0].u8[1], data_pkg.route[1].u8[1], data_pkg.route[2].u8[1], data_pkg.route[3].u8[1], data_pkg.route[4].u8[1], data_pkg.route[5].u8[1]);
 
 
 			id = (id<99) ? id+1 : 1;
@@ -157,19 +157,19 @@ PROCESS_THREAD(data_process, ev, data){
 			data_pkg.hops = ((DATA_PACKAGE*)data)->hops + 1;
 			int h = data_pkg.hops;
 			printf("hops in this forwarding data is %d\n",h);
-			printf("data package route now is:%d,%d,%d,%d,%d,%d\n",((DATA_PACKAGE*)data)->route[0],((DATA_PACKAGE*)data)->route[1],
-					((DATA_PACKAGE*)data)->route[2],((DATA_PACKAGE*)data)->route[3],((DATA_PACKAGE*)data)->route[4],
-					((DATA_PACKAGE*)data)->route[5]);
+			printf("data package route now is:%d,%d,%d,%d,%d,%d\n",((DATA_PACKAGE*)data)->route[0].u8[1],((DATA_PACKAGE*)data)->route[1].u8[1],
+					((DATA_PACKAGE*)data)->route[2].u8[1],((DATA_PACKAGE*)data)->route[3].u8[1],((DATA_PACKAGE*)data)->route[4].u8[1],
+					((DATA_PACKAGE*)data)->route[5].u8[1]);
 			for(int i=0; i<h; i++){
 				data_pkg.route[i] = ((DATA_PACKAGE*)data)->route[i];
 						}
-			printf("the current h. route in data packet is%d, my adress is %d \n",data_pkg.route[h-1], linkaddr_node_addr.u8[1]);
-			if(data_pkg.route[h-1] != linkaddr_node_addr.u8[1]){
-				data_pkg.route[h] = linkaddr_node_addr.u8[1];
+			printf("the current h. route in data packet is%d, my adress is %d \n",data_pkg.route[h-1].u8[1], linkaddr_node_addr.u8[1]);
+			if(data_pkg.route[h-1].u8[1] != linkaddr_node_addr.u8[1]){
+				data_pkg.route[h].u8[1] = linkaddr_node_addr.u8[1];
 			}
 
 
-			printf("route is updated to %d,%d,%d,%d,%d,%d\n", data_pkg.route[0], data_pkg.route[1], data_pkg.route[2], data_pkg.route[3], data_pkg.route[4], data_pkg.route[5]);
+			printf("route is updated to %d,%d,%d,%d,%d,%d\n", data_pkg.route[0].u8[1], data_pkg.route[1].u8[1], data_pkg.route[2].u8[1], data_pkg.route[3].u8[1], data_pkg.route[4].u8[1], data_pkg.route[5].u8[1]);
 		}
 
 
@@ -324,7 +324,7 @@ PROCESS_THREAD(aging_process, ev, data)
                 else
                 {
                     waitingTable[i].age--;
-                    if (waitingTable[i].age < 0)
+                    if (waitingTable[i].age == 0)
                     {
                         waitingTable[i].valid = 0;
                         flag++;
@@ -343,7 +343,7 @@ PROCESS_THREAD(aging_process, ev, data)
         	if(waitingackTable[i].valid != 0)
         	{
         		waitingackTable[i].age--;
-                if (waitingackTable[i].age < 0)
+                if (waitingackTable[i].age == 0)
                 {
                 	waitingackTable[i].valid = 0;
                     printf("There is now no more existing route to %d, so the node %d is going to request again from itself\n",
@@ -390,7 +390,7 @@ static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
         // if the destination is itself
         if(data.dest.u8[1] == linkaddr_node_addr.u8[1]){
             printf("DATA RECEIVED of src %d:\n{%s}\n with Route:{%d,%d,%d,%d,%d,%d}\n", data.src.u8[1], data.message,
-            		data.route[0], data.route[1], data.route[2], data.route[3], data.route[4], data.route[5]);
+            		data.route[0].u8[1], data.route[1].u8[1], data.route[2].u8[1], data.route[3].u8[1], data.route[4].u8[1], data.route[5].u8[1]);
         }
         // otherwise
         else{
@@ -419,7 +419,7 @@ static void ack_callback(struct unicast_conn *c, const linkaddr_t *from){
     printf("\n--------Ack received--------\n");
 
     packetbuf_copyto(&ack);
-
+    printf("ack from: %d, src: %d\n", from->u8[1], ack.src.u8[1]);
     printf("strcmp(ack.head, ACK_H): %d\n", strcmp(ack.head, ACK_H) == 0);
     if(strcmp(ack.head, ACK_H) == 0){
     	packetbuf_clear();
