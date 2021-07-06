@@ -5,7 +5,7 @@
 
 
 /*----------struct to packet------*/
-void data2packet(struct DATA_PACKAGE* data, char* packet){
+void data2packet(DATA_PACKAGE* data, char* packet){
     sprintf(packet, DATA, data->id, data->src.u8[1], data->dest.u8[1], data->message,
     		data->route[0], data->route[1], data->route[2], data->route[3], data->route[4], data->route[5]);
 }
@@ -20,7 +20,7 @@ void rep2packet(struct REP_PACKAGE* rep, char* packet){
 }
 
 /*----------packet to struct------*/
-int packet2data(char* package, struct DATA_PACKAGE* data){
+int packet2data(char* package, DATA_PACKAGE* data){
 	static char id[] = "00";
 	static char src[] = "0";
 	static char dest[] = "0";

@@ -24,8 +24,8 @@ static struct unicast_conn ack_conn;
 static void addEntryToDiscoveryTable(struct DISCOVERY_TABLE* req_info);
 static char updateRoutingTable(struct REP_PACKAGE *rep, const linkaddr_t *from);
 static void clearDiscovery(struct REP_PACKAGE* rep);
-void addToWaitingTable(struct DATA_PACKAGE *data);
-void addToWaitingAckTable(struct DATA_PACKAGE *data);
+void addToWaitingTable(DATA_PACKAGE *data);
+void addToWaitingAckTable(DATA_PACKAGE *data);
 
 static char isDuplicateReq(struct REQ_PACKAGE* req);
 
@@ -42,7 +42,7 @@ static const struct broadcast_callbacks req_cbk = {request_callback};
 static const struct unicast_callbacks ack_cbk = {ack_callback};
 
 /*transmit functions*/
-static void senddata(struct DATA_PACKAGE *data, int next);
+static void senddata(DATA_PACKAGE *data, int next);
 static void sendreq(struct REQ_PACKAGE* req);
 static void sendrep(struct REP_PACKAGE* rep, int next);
 static void sendack(struct ACK_PACKAGE *ack, int pre);
@@ -101,7 +101,7 @@ PROCESS_THREAD(initial_process, ev, data){
 PROCESS_THREAD(data_process, ev, data){
 
 	static struct etimer et;
-    static struct DATA_PACKAGE data_pkg;
+    static DATA_PACKAGE data_pkg;
 	static int id = 1;
 
     static struct DISCOVERY_TABLE discovery;
@@ -127,6 +127,7 @@ PROCESS_THREAD(data_process, ev, data){
 		if(ev == PROCESS_EVENT_TIMER && linkaddr_node_addr.u8[1]!=0x01){
 			printf("Generate new data.\n");
 			// Set message
+			strcpy(data_pkg.head, DATA_H);
 			data_pkg.dest.u8[0] = (DESTINATION >> 8) & 0xFF;
 			data_pkg.dest.u8[1] = DESTINATION & 0xFF;
 			data_pkg.id = id;
@@ -149,27 +150,27 @@ PROCESS_THREAD(data_process, ev, data){
 		// Forward data
 		else{
 			printf("Forwarding data...\n");
-			data_pkg.dest.u8[0] = ((struct DATA_PACKAGE*)data)->dest.u8[0];
-			data_pkg.dest.u8[1] = ((struct DATA_PACKAGE*)data)->dest.u8[1];
-			data_pkg.id = ((struct DATA_PACKAGE*)data)->id;
-			data_pkg.src.u8[0] = ((struct DATA_PACKAGE*)data)->src.u8[0];
-			data_pkg.src.u8[1] = ((struct DATA_PACKAGE*)data)->src.u8[1];
-			strcpy(data_pkg.message,((struct DATA_PACKAGE*)data)->message);
-			data_pkg.hops = ((struct DATA_PACKAGE*)data)->hops + 1;
+			data_pkg.dest.u8[0] = ((DATA_PACKAGE*)data)->dest.u8[0];
+			data_pkg.dest.u8[1] = ((DATA_PACKAGE*)data)->dest.u8[1];
+			data_pkg.id = ((DATA_PACKAGE*)data)->id;
+			data_pkg.src.u8[0] = ((DATA_PACKAGE*)data)->src.u8[0];
+			data_pkg.src.u8[1] = ((DATA_PACKAGE*)data)->src.u8[1];
+			strcpy(data_pkg.message,((DATA_PACKAGE*)data)->message);
+			data_pkg.hops = ((DATA_PACKAGE*)data)->hops + 1;
 			int h = data_pkg.hops;
 			printf("hops in this forwarding data is %d\n",h);
-			printf("data package route now is:%d,%d,%d,%d,%d,%d\n",((struct DATA_PACKAGE*)data)->route[0],((struct DATA_PACKAGE*)data)->route[1],
-					((struct DATA_PACKAGE*)data)->route[2],((struct DATA_PACKAGE*)data)->route[3],((struct DATA_PACKAGE*)data)->route[4],
-					((struct DATA_PACKAGE*)data)->route[5]);
+			printf("data package route now is:%d,%d,%d,%d,%d,%d\n",((DATA_PACKAGE*)data)->route[0],((DATA_PACKAGE*)data)->route[1],
+					((DATA_PACKAGE*)data)->route[2],((DATA_PACKAGE*)data)->route[3],((DATA_PACKAGE*)data)->route[4],
+					((DATA_PACKAGE*)data)->route[5]);
 			for(int i=0; i<h; i++){
-				data_pkg.route[i] = ((struct DATA_PACKAGE*)data)->route[i];
+				data_pkg.route[i] = ((DATA_PACKAGE*)data)->route[i];
 						}
-//			data_pkg.route[0] = ((struct DATA_PACKAGE*)data)->route[0];
-//			data_pkg.route[1] = ((struct DATA_PACKAGE*)data)->route[1];
-//			data_pkg.route[2] = ((struct DATA_PACKAGE*)data)->route[2];
-//			data_pkg.route[3] = ((struct DATA_PACKAGE*)data)->route[3];
-//			data_pkg.route[4] = ((struct DATA_PACKAGE*)data)->route[4];
-//			data_pkg.route[5] = ((struct DATA_PACKAGE*)data)->route[5];
+//			data_pkg.route[0] = ((DATA_PACKAGE*)data)->route[0];
+//			data_pkg.route[1] = ((DATA_PACKAGE*)data)->route[1];
+//			data_pkg.route[2] = ((DATA_PACKAGE*)data)->route[2];
+//			data_pkg.route[3] = ((DATA_PACKAGE*)data)->route[3];
+//			data_pkg.route[4] = ((DATA_PACKAGE*)data)->route[4];
+//			data_pkg.route[5] = ((DATA_PACKAGE*)data)->route[5];
 			printf("the current h. route in data packet is%d, my adress is %d \n",data_pkg.route[h-1], linkaddr_node_addr.u8[1]);
 			if(data_pkg.route[h-1] != linkaddr_node_addr.u8[1]){
 				data_pkg.route[h] = linkaddr_node_addr.u8[1];
@@ -379,7 +380,7 @@ PROCESS_THREAD(aging_process, ev, data)
 
 /*---------------------callback functions---------------*/
 static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
-    static struct DATA_PACKAGE data;
+    static DATA_PACKAGE data;
     static struct ACK_PACKAGE ack;
 //    char data_packet[DATA_LEN];
     static char data_packet[DATA_LEN];
@@ -387,14 +388,13 @@ static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
     printf("\n--------Data received--------\n");
 
     //strncpy(data_packet, (char *)packetbuf_dataptr(), DATA_LEN);
-    packetbuf_copyto(&data_packet);
+    packetbuf_copyto(&data);
 
     printf("Received data: %s\n", data_packet);
 
-    if(packet2data(data_packet, &data) != 0){
+    if(data.head == DATA_H){
     	packetbuf_clear();
         // if the destination is itself
-    	packetbuf_clear();
         if(data.dest.u8[1] == linkaddr_node_addr.u8[1]){
             printf("DATA RECEIVED of src %d:\n{%s}\n with Route:{%d,%d,%d,%d,%d,%d}\n", data.src.u8[1], data.message,
             		data.route[0], data.route[1], data.route[2], data.route[3], data.route[4], data.route[5]);
@@ -578,7 +578,7 @@ static void addEntryToDiscoveryTable(struct DISCOVERY_TABLE* req_info)
 /**
  * Add the data to the waiting table
  */
-void addToWaitingTable(struct DATA_PACKAGE *data){
+void addToWaitingTable(DATA_PACKAGE *data){
 	for(int i=0; i<MAX_WAIT_DATA; i++) {
 	        if(waitingTable[i].data_pkg.src.u8[1] == data->src.u8[1]
 	        		&& waitingTable[i].data_pkg.id == data->id
@@ -602,7 +602,7 @@ void addToWaitingTable(struct DATA_PACKAGE *data){
 /**
  * Add the data to the waiting table waiting for acknowledge
  */
-void addToWaitingAckTable(struct DATA_PACKAGE *data){
+void addToWaitingAckTable(DATA_PACKAGE *data){
 	for(int i=0; i<MAX_WAIT_DATA; i++) {
 		if(waitingackTable[i].data_pkg.src.u8[1] == data->src.u8[1]
 				&& waitingackTable[i].data_pkg.id == data->id
@@ -736,8 +736,9 @@ static int getNextHop(){
 /**
  *  Send data
  */
-static void senddata(struct DATA_PACKAGE *data, int next){
+static void senddata(DATA_PACKAGE *data, int next){
     static char packet[DATA_LEN];
+//    DATA_PACKAGE data_ = *data;
 
     static linkaddr_t next_addr;
     next_addr.u8[1]=next;
@@ -745,10 +746,12 @@ static void senddata(struct DATA_PACKAGE *data, int next){
 
     printf("\n--------Data sending--------\n");
 
-    data2packet(data, packet);
-    printf("Send data packet: %s\n", packet);
+//    data2packet(data, packet);
+//    printf("Send data packet: %s\n", packet);
+    printf("sizeof DATA_PACKAGE, %d\n", sizeof(DATA_PACKAGE));
     packetbuf_clear();
-    packetbuf_copyfrom(packet, DATA_LEN);
+//    packetbuf_copyfrom(packet, DATA_LEN);
+    packetbuf_copyfrom(data, sizeof(DATA_PACKAGE));
     unicast_send(&data_conn, &next_addr);
     //packetbuf_clear();
 

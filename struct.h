@@ -11,6 +11,9 @@
 #define REQ "REQUEST;ID:%2d;SRC:%1d;DEST:%1d"
 #define REP "REPLY;ID:%2d;SRC:%1d;DEST:%1d;HOP:%1d;RSSI:%3d"
 
+#define DATA_H "DATA"
+#define DATA_H_LEN sizeof(DATA_H)
+
 #define DATA_LEN sizeof(DATA)-1 - 15 + DATA_PAYLOAD_LEN
 #define ACK_LEN sizeof(ACK)-1 - 3
 #define REQ_LEN sizeof(REQ)-1 - 5
@@ -19,14 +22,15 @@
 /**
  * data package
  */
-struct DATA_PACKAGE{
-	int id;
+typedef struct{
+	char head[DATA_H_LEN];
+	uint8_t id;
 	linkaddr_t src;
 	linkaddr_t dest;
-	char message[DATA_LEN];
+	char message[DATA_PAYLOAD_LEN];
 	char route[MAX_NODES];
-	int hops;
-};
+	uint8_t hops;
+}DATA_PACKAGE;
 
 /**
  * acknowledgment package
@@ -34,7 +38,7 @@ struct DATA_PACKAGE{
 struct ACK_PACKAGE{
 	int id;
 	linkaddr_t src;
-	linkaddr_t dest
+	linkaddr_t dest;
 };
 
 /**
@@ -87,7 +91,7 @@ struct DISCOVERY_TABLE{
  * waiting table
  */
 struct WAITING_TABLE{
-    struct DATA_PACKAGE data_pkg;
+    DATA_PACKAGE data_pkg;
     int age;
     int valid;
 };
@@ -96,19 +100,19 @@ struct WAITING_TABLE{
  * waiting ack table
  */
 struct WAITING_ACK_TABLE{
-	struct DATA_PACKAGE data_pkg;
+	DATA_PACKAGE data_pkg;
 	int age;
 	int valid;
 };
 
 /*----------struct to packet------*/
-void data2packet(struct DATA_PACKAGE* data, char* packet);
+void data2packet(DATA_PACKAGE* data, char* packet);
 void ack2packet(struct ACK_PACKAGE* ack, char* packet);
 void req2packet(struct REQ_PACKAGE* req, char* packet);
 void rep2packet(struct REP_PACKAGE* rep, char* packet);
 
 /*----------packet to struct------*/
-int packet2data(char* package, struct DATA_PACKAGE* data);
+int packet2data(char* package, DATA_PACKAGE* data);
 int packet2ack(char* package, struct ACK_PACKAGE* ack);
 int packet2req(char* package, struct REQ_PACKAGE* req);
 int packet2rep(char* package, struct REP_PACKAGE* rep);
