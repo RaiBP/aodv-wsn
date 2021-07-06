@@ -148,7 +148,7 @@ void MainWindow::receive()
 }
 
 void MainWindow::addToFile(double temp, double batt, int src){
-    QFile file("Data.txt");
+    QFile file("./Data.txt");
     file.open(QIODevice::ReadOnly);
 
     QString lines[file_size] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -157,7 +157,7 @@ void MainWindow::addToFile(double temp, double batt, int src){
     }
     file.close();
 
-    QFile file2("Data.txt");
+    QFile file2("./Data.txt");
     file2.open(QIODevice::WriteOnly | QFile::Truncate);
     QTextStream out(&file2);
     if(src < file_size){
@@ -166,8 +166,9 @@ void MainWindow::addToFile(double temp, double batt, int src){
     }
 
     for(int i = 0; i < file_size; i++){
-        qDebug() << "Add empty line";
+
         if(lines[i] == "" || lines[i] == "\n"){
+            qDebug() << "Add empty line";
             out << endl;
         }else{
             qDebug() << "Add to file: " << lines[i];
@@ -203,9 +204,9 @@ void MainWindow::on_comboBox_Interface_source_currentIndexChanged(const QString 
 
     if(arg1 != "All"){
         qDebug() << "crrent number of comboBox: " << arg1.toInt();
-        int index = arg1.toInt();
+        int index = arg1.toInt() - 1;
 
-        QFile file("Data.txt");
+        QFile file("./Data.txt");
         file.open(QIODevice::ReadOnly);
         QString lines[file_size] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
         for(int i = 0; i < file_size; i++){
