@@ -59,34 +59,6 @@
 #include <QKeyEvent>
 #include <QRandomGenerator>
 
-class Connection {
-    public:
-        int prv;
-        int nxt;
-
-    bool isEquals(Connection conn) {
-        // direction doesn't matter
-        return ((prv == conn.prv) && (nxt == conn.nxt)) || ((prv == conn.nxt) && (nxt == conn.prv));
-    }   
-};
-
-class Route {       
-  public:             
-    std::list<Connection> connections;
-    int src;
-    int dst;   
-
-bool isConnectionInRoute(Connection conn) {
-        for (const Connection & c : connections)
-        {
-            if (c.isEquals(conn))
-                return true;
-        }
-        return false;
-    }   
-};
-
-
 
 //! [0]
 GraphWidget::GraphWidget(QWidget *parent)
@@ -106,7 +78,7 @@ GraphWidget::GraphWidget(QWidget *parent)
 //! [0]
 
 //! [1]
-    std::list<Route> route_list;
+    //std::list<Route> route_list;
 
     Node *node1 = new Node(this); // Receiving Node
     Node *node2 = new Node(this);
@@ -136,7 +108,8 @@ GraphWidget::GraphWidget(QWidget *parent)
 //! [1]
 
 // SLOT: Prints data received from the port on the QTextEdit widget.
-void GraphWidget::receive()
+/*
+void GraphWidget::receiveTopology()
 {
 
     QByteArray data = port.readAll();
@@ -192,30 +165,11 @@ void GraphWidget::receive()
         }
     }
 }
-
-void GraphWidget::addToRouteList(int route_array[], int src)
-{   
-    std::list<Connection> new_connections = getConnectionListfromArray(route_array);
-
-    for (const Route & r : route_list)
-    {
-            if (r.src == src) {
-                r.src = src;
-                r.connections = new_connections     
-            }
-    }
-
-    Route new_route;
-    new_route.src = src;
-    new_route.connections = new_connections;
-    new_route.dst = 1;
-
-    route_list.push_back(new_route);
-}
+*/
 
 std::list<Connection> GraphWidget::getConnectionListfromArray(int route_array[])
 {
-    std:list<Connection> conn_list;
+    std::list<Connection> conn_list;
     for (int i=0; i<6; i++) {
         int node_id = route_array[i];
         int next_node_id;
@@ -240,17 +194,35 @@ std::list<Connection> GraphWidget::getConnectionListfromArray(int route_array[])
     return conn_list;
 }
 
+
+void GraphWidget::addToRouteList(int route_array[], int src)
+{   
+    std::list<Connection> new_connections = getConnectionListfromArray(route_array);
+
+    for (Route & r : route_list)
+    {
+            if (r.src == src) {
+                r.setSource(src);
+                r.setConnections(new_connections);
+            }
+    }
+
+    Route new_route(src, 1, new_connections);
+
+    route_list.push_back(new_route);
+}
+
 void GraphWidget::drawRoutes()
 {
-    stage->clear(); // clear all items from stage
+    scene()->clear(); // clear all items from scene
 
-    scene->addItem(node1);
-    scene->addItem(node2);
-    scene->addItem(node3);
-    scene->addItem(node4);
-    scene->addItem(node5);
-    scene->addItem(node6);
-    scene->addItem(node7);
+    scene()->addItem(node1);
+    scene()->addItem(node2);
+    scene()->addItem(node3);
+    scene()->addItem(node4);
+    scene()->addItem(node5);
+    scene()->addItem(node6);
+    scene()->addItem(node7);
 
     node1->setPos(0, 0);
     node2->setPos(0, -50);
@@ -270,8 +242,8 @@ void GraphWidget::drawRoute(Route r)
 {
     for (const Connection & c : r.connections)
     {
-        Node prev;
-        Node next;
+        Node *prev;
+        Node *next;
 
         switch (c.prv)
         {
@@ -323,10 +295,9 @@ void GraphWidget::drawRoute(Route r)
                 break;
         }
 
-        scene->addItem(new Edge(prev, next));
+        scene()->addItem(new Edge(prev, next));
 
     }
-
 
 }
 
@@ -343,16 +314,16 @@ void GraphWidget::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key()) {
     case Qt::Key_Up:
-        centerNode->moveBy(0, -20);
+        node1->moveBy(0, -20);
         break;
     case Qt::Key_Down:
-        centerNode->moveBy(0, 20);
+        node1->moveBy(0, 20);
         break;
     case Qt::Key_Left:
-        centerNode->moveBy(-20, 0);
+        node1->moveBy(-20, 0);
         break;
     case Qt::Key_Right:
-        centerNode->moveBy(20, 0);
+        node1->moveBy(20, 0);
         break;
     case Qt::Key_Plus:
         zoomIn();

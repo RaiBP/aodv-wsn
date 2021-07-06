@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QMessageBox>
+#include <graphwidget.h>
 #include "qextserialport.h"         // Enables use of the qextserialport library.
 #include "qextserialenumerator.h"   // Helps list of open ports.
 
@@ -24,6 +25,7 @@ private:
     QMessageBox error;              // USed to process error messages.
     int file_size = 9;
     int combo_flags[9] = {0,0,0,0,0,0,0,0,0};
+    GraphWidget *widget = new GraphWidget;
 
     void addToFile(double temp, double batt, int src);
     void updateProgressBar(double temp, double batt);

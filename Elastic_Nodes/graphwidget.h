@@ -55,6 +55,51 @@
 
 class Node;
 
+class Connection {
+    public:
+        int prv;
+        int nxt;
+
+    bool isEquals(Connection conn) {
+        // direction doesn't matter
+        return ((prv == conn.prv) && (nxt == conn.nxt)) || ((prv == conn.nxt) && (nxt == conn.prv));
+    }
+};
+
+class Route {
+  public:
+    std::list<Connection> connections;
+    int src;
+    int dst;
+
+    Route(int s, int d, std::list<Connection> conn)
+        {
+            src = s;
+            dst = d;
+            connections = conn;
+        }
+
+    void setSource(int s) {
+        src = s;
+    }
+
+    void setConnections(std::list<Connection> conn) {
+        connections = conn;
+    }
+
+bool isConnectionInRoute(Connection conn) {
+        for (const Connection & c : connections)
+        {
+            if (conn.isEquals(c))
+                return true;
+        }
+        return false;
+    }
+
+~Route(){}
+};
+
+
 //! [0]
 class GraphWidget : public QGraphicsView
 {
@@ -62,8 +107,11 @@ class GraphWidget : public QGraphicsView
 
 public:
     GraphWidget(QWidget *parent = nullptr);
-
+    void addToRouteList(int route_array[], int src);
+    void drawRoutes();
     void itemMoved();
+    void drawRoute(Route r);
+    std::list<Connection> getConnectionListfromArray(int route_array[]);
 
 public slots:
     void shuffle();
@@ -82,7 +130,14 @@ protected:
 
 private:
     int timerId = 0;
-    Node *centerNode;
+    std::list<Route> route_list;
+    Node *node1;
+    Node *node2;
+    Node *node3;
+    Node *node4;
+    Node *node5;
+    Node *node6;
+    Node *node7;
 };
 //! [0]
 

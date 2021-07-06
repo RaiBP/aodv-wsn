@@ -1,11 +1,13 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <qdebug.h>
+#include <graphwidget.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+
     ui->setupUi(this);
 
     // Get all available COM Ports and store them in a QList.
@@ -101,31 +103,44 @@ void MainWindow::receive()
     QString str = data;
     ui->textEdit_Status->insertPlainText(data);
 
-    int src;
     double temp;
     double batt;
+    // GraphWidget graph = (GraphWidget) centralWidget();
 
     QStringList data_list = str.split(";");
     if(!data_list.isEmpty()){
         qDebug() << "received data: " << data;
         qDebug() << "data_list(0): " << data_list.at(0);
         if(data_list.at(0) == "DATA"){      // data is received     DATA;ID:%2d;SRC:%1d;DEST:%1d;PAYLOAD:%s
-            for(int i=1; i < data_list.size(); i++){
-                qDebug() << "data list value " << i << " " << data_list.at(i);
-                QString str = data_list.at(i);
-                if(str.contains("SRC:")){
-                    QStringList src_list = str.split(":");          //SRC:%1d
-                    qDebug() << "src_list(1): " << src_list.at(1);
-                    src = src_list.at(1).toInt();
-                }
-                if(str.contains("PAYLOAD:")){       //PAYLOAD:Temperature %d Luminance %d
-                    QStringList pay_list = str.split(" ");
-                    qDebug() << "pay_list(0): " << pay_list.at(0);  //PAYLOAD:Temperature
-                    qDebug() << "pay_list(1): " << pay_list.at(1);  //'Temperature value'
-                    qDebug() << "pay_list(2): " << pay_list.at(2);  //Luminance
-                    qDebug() << "pay_list(3): " << pay_list.at(3);  //'Battery value'
-                    temp = pay_list.at(1).toDouble();
-                    batt = pay_list.at(3).toDouble();
+            int route_array [6];
+            int src = 0;
+            for(int i=1; i < data_list.size(); i++)
+                {
+                    qDebug() << "data list value " << i << " " << data_list.at(i);
+                    QString str = data_list.at(i);
+                    if(str.contains("PAYLOAD:")){       //PAYLOAD:Temperature %d Luminance %d
+                        QStringList pay_list = str.split(" ");
+                        qDebug() << "pay_list(0): " << pay_list.at(0);  //PAYLOAD:Temperature
+                        qDebug() << "pay_list(1): " << pay_list.at(1);  //'Temperature value'
+                        qDebug() << "pay_list(2): " << pay_list.at(2);  //Luminance
+                        qDebug() << "pay_list(3): " << pay_list.at(3);  //'Battery value'
+                        temp = pay_list.at(1).toDouble();
+                        batt = pay_list.at(3).toDouble();
+                    }
+                    if(str.contains("ROUTE:")){       //ROUTE:%d,%d,%d,%d,%d,%d
+                        QStringList route_list = str.split(",");
+                        qDebug() << "route_list(0): " << route_list.at(0);  //ROUTE:node1
+                        qDebug() << "route_list(1): " << route_list.at(1);  //'Temperature value'
+                        qDebug() << "route_list(2): " << route_list.at(2);  //Luminance
+                        qDebug() << "route_list(3): " << route_list.at(3);  //'Battery value'
+                        qDebug() << "route_list(4): " << route_list.at(4);  //'Temperature value'
+                        qDebug() << "proute_list(5): " << route_list.at(5);  //Luminance
+                        route_array[0] = route_list.at(0).split(":").at(1).toInt();
+                        route_array[1] = route_list.at(1).toInt();
+                        route_array[2] = route_list.at(2).toInt();
+                        route_array[3] = route_list.at(3).toInt();
+                        route_array[4] = route_list.at(4).toInt();
+                        route_array[5] = route_list.at(5).toInt();
                     }
                 }
             addToFile(temp, batt, src);
@@ -133,6 +148,9 @@ void MainWindow::receive()
             if((ui->comboBox_Interface_source->currentText() == src) || (ui->comboBox_Interface_source->currentText() == "All")){
                 updateProgressBar(temp, batt);
             }
+
+            widget->addToRouteList(route_array, src);
+            widget->drawRoutes();
         }
     }
 }
