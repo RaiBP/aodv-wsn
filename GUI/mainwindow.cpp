@@ -97,44 +97,54 @@ void MainWindow::on_pushButton_send_clicked() {
 void MainWindow::receive()
 {
 
-    QByteArray data = port.readAll();
-    QString str = data;
-    ui->textEdit_Status->insertPlainText(data);
+//    QByteArray data = port.readAll();
+//    QString str_ = data;
+//    ui->textEdit_Status->insertPlainText(data);
 
     int src;
     double temp;
-    double batt;
+    double lux;
 
-    QStringList data_list = str.split(";");
-    if(!data_list.isEmpty()){
-        qDebug() << "received data: " << data;
-        qDebug() << "data_list(0): " << data_list.at(0);
-        if(data_list.at(0) == "\n--------Data received--------\nReceived data: DATA"){      // data is received     DATA;ID:%2d;SRC:%1d;DEST:%1d;PAYLOAD:%s
-            for(int i=1; i < data_list.size(); i++){
-                qDebug() << "data list value " << i << " " << data_list.at(i);
-                QString str = data_list.at(i);
-                if(str.contains("SRC:")){
-                    QStringList src_list = str.split(":");          //SRC:%1d
-                    qDebug() << "src_list(1): " << src_list.at(1);
-                    src = src_list.at(1).toInt();
-                }
-                if(str.contains("PAYLOAD:")){       //PAYLOAD:Temperature %d Luminance %d
-                    QStringList pay_list = str.split(" ");
-                    qDebug() << "pay_list(0): " << pay_list.at(0);  //PAYLOAD:Temperature
-                    qDebug() << "pay_list(1): " << pay_list.at(1);  //'Temperature value'
-                    qDebug() << "pay_list(2): " << pay_list.at(2);  //Luminance
-                    qDebug() << "pay_list(3): " << pay_list.at(3);  //'Battery value'
+    static QString str;
+    char ch;
+    while (port.getChar(&ch))
+    {
+        str.append(ch);
+        if (ch == '\n')     // End of line, start decoding
+        {
+            str.remove("\n", Qt::CaseSensitive);
+            QStringList data_list = str.split(";");
+            if(!data_list.isEmpty()){
+                qDebug() << "received data: " << str;
+                qDebug() << "data_list(0): " << data_list.at(0);
+                if(data_list.at(0) == "DATA"){      // data is received     DATA;ID:%2d;SRC:%1d;DEST:%1d;PAYLOAD:%s
+                    ui->textEdit_Status->append(str);
+                    src = data_list.at(2).toInt();
+                    qDebug() << "src: " << src;
+
+                    QString payload = data_list.at(4);
+                    qDebug() << "payload: " << payload;
+                    QStringList pay_list = payload.split(" ");
+                    for(int i =0; i < pay_list.length(); i++){
+                        qDebug() << pay_list.at(i);
+                    }
                     temp = pay_list.at(1).toDouble();
-                    batt = pay_list.at(3).toDouble();
+                    lux = pay_list.at(3).toDouble();
+                    qDebug() << "temperature: " << temp << "luminance: " << lux;
+
+
+                    addToFile(temp, lux, src);
+                    qDebug() << "current comboBox text: " << ui->comboBox_Interface_source->currentText();
+                    if((ui->comboBox_Interface_source->currentText() == src) || (ui->comboBox_Interface_source->currentText() == "All")){
+                        updateProgressBar(temp, lux);
                     }
                 }
-            addToFile(temp, batt, src);
-            qDebug() << "current comboBox text: " << ui->comboBox_Interface_source->currentText();
-            if((ui->comboBox_Interface_source->currentText() == src) || (ui->comboBox_Interface_source->currentText() == "All")){
-                updateProgressBar(temp, batt);
             }
+            str.clear();
         }
     }
+
+
 }
 
 void MainWindow::addToFile(double temp, double batt, int src){
@@ -156,9 +166,11 @@ void MainWindow::addToFile(double temp, double batt, int src){
     }
 
     for(int i = 0; i < file_size; i++){
+        qDebug() << "Add empty line";
         if(lines[i] == "" || lines[i] == "\n"){
             out << endl;
         }else{
+            qDebug() << "Add to file: " << lines[i];
             out << lines[i];
             if(combo_flags[i] == 0){
                 qDebug() << "Add source " << i+1 << "to comboBox.";
@@ -170,7 +182,7 @@ void MainWindow::addToFile(double temp, double batt, int src){
     file2.close();
 }
 
-void MainWindow::updateProgressBar(double temp, double batt){
+void MainWindow::updateProgressBar(double temp, double lux){
     temp = temp / 1000;
     printf("Temperature: %f\n",temp);
     ui->progressBar_light->setMaximum(40);
@@ -178,12 +190,11 @@ void MainWindow::updateProgressBar(double temp, double batt){
     ui->lcdNumber_light->display(temp);
     ui->progressBar_light->setValue((int)temp);
 
-    batt = batt / 1000;
-    printf("Battery: %f\n",batt);
-    ui->progressBar_battery->setMaximum(40);
-    qDebug() << "Temp value " << QString::number(batt);
-    ui->lcdNumber_battery->display(batt);
-    ui->progressBar_battery->setValue((int)batt);
+    printf("Battery: %f\n",lux);
+    ui->progressBar_battery->setMaximum(1000);
+    qDebug() << "Temp value " << QString::number(lux);
+    ui->lcdNumber_battery->display(lux);
+    ui->progressBar_battery->setValue((int)lux);
 }
 
 void MainWindow::on_comboBox_Interface_source_currentIndexChanged(const QString &arg1)
