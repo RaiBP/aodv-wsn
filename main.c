@@ -136,6 +136,7 @@ PROCESS_THREAD(data_process, ev, data){
 			sprintf(data_pkg.message, DATA_PAY, getTemperatureValue(), getLuxValue());
 			data_pkg.hops = 0;
 			data_pkg.route[0].u8[1] = linkaddr_node_addr.u8[1];
+			data_pkg.route[1].u8[1] = 0;
 			printf("route is %d,%d,%d,%d,%d,%d\n", data_pkg.route[0].u8[1], data_pkg.route[1].u8[1], data_pkg.route[2].u8[1], data_pkg.route[3].u8[1], data_pkg.route[4].u8[1], data_pkg.route[5].u8[1]);
 
 
@@ -375,12 +376,9 @@ PROCESS_THREAD(aging_process, ev, data)
 static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
     static DATA_PACKAGE data;
     static ACK_PACKAGE ack;
-//    char data_packet[DATA_LEN];
     static char data_packet[DATA_LEN];
 
-    printf("\n--------Data received--------\n");
-
-    //strncpy(data_packet, (char *)packetbuf_dataptr(), DATA_LEN);
+//    printf("\n--------Data received--------\n");
     packetbuf_copyto(&data);
 
 //    printf("Received data: %s\n", data_packet);
@@ -389,8 +387,11 @@ static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
     	packetbuf_clear();
         // if the destination is itself
         if(data.dest.u8[1] == linkaddr_node_addr.u8[1]){
-            printf("DATA RECEIVED of src %d:\n{%s}\n with Route:{%d,%d,%d,%d,%d,%d}\n", data.src.u8[1], data.message,
-            		data.route[0].u8[1], data.route[1].u8[1], data.route[2].u8[1], data.route[3].u8[1], data.route[4].u8[1], data.route[5].u8[1]);
+//            printf("DATA RECEIVED of src %d:\n{%s}\n with Route:{%d,%d,%d,%d,%d,%d}\n", data.src.u8[1], data.message,
+//            		data.route[0].u8[1], data.route[1].u8[1], data.route[2].u8[1], data.route[3].u8[1], data.route[4].u8[1], data.route[5].u8[1]);
+        	printf("%s;%d;%d;%d;%s;%d,%d,%d,%d,%d,%d;%d\n", data.head, data.id, data.src.u8[1], data.dest.u8[1], data.message,
+        			data.route[0].u8[1], data.route[1].u8[1], data.route[2].u8[1], data.route[3].u8[1],
+					data.route[4].u8[1], data.route[5].u8[1], data.hops);
         }
         // otherwise
         else{
@@ -416,11 +417,12 @@ static void ack_callback(struct unicast_conn *c, const linkaddr_t *from){
     static ACK_PACKAGE ack;
     static char ack_packet[ACK_LEN];
 
-    printf("\n--------Ack received--------\n");
+//    printf("\n--------Ack received--------\n");
 
     packetbuf_copyto(&ack);
-    printf("ack from: %d, src: %d\n", from->u8[1], ack.src.u8[1]);
-    printf("strcmp(ack.head, ACK_H): %d\n", strcmp(ack.head, ACK_H) == 0);
+//    printf("ack from: %d, src: %d\n", from->u8[1], ack.src.u8[1]);
+//    printf("strcmp(ack.head, ACK_H): %d\n", strcmp(ack.head, ACK_H) == 0);
+    printf("ACK;\n");
     if(strcmp(ack.head, ACK_H) == 0){
     	packetbuf_clear();
     	for(int i = 0; i < MAX_WAIT_DATA; i++){
@@ -447,16 +449,17 @@ static void reply_callback(struct unicast_conn *c, const linkaddr_t *from)
     static REP_PACKAGE rep;
     static int i;
 
-    printf("\n--------Reply received--------\n");
+//    printf("\n--------Reply received--------\n");
 
     packetbuf_copyto(&rep);
+    printf("REP;\n");
 
     // if REPLY package received
     if(strcmp(rep.head, REP_H) == 0)
     {
     	packetbuf_clear();
-        printf("REPLY received from %d [ID:%d, Dest:%d, Src:%d, Hops:%d, RSSI: %d]\n",
-                        from->u8[1], rep.id, rep.dest.u8[1], rep.src.u8[1], rep.hops, rep.rssi);
+//        printf("REPLY received from %d [ID:%d, Dest:%d, Src:%d, Hops:%d, RSSI: %d]\n",
+//                        from->u8[1], rep.id, rep.dest.u8[1], rep.src.u8[1], rep.hops, rep.rssi);
 
         // check if reply table updates
 //        if(updateRoutingTable(&rep, from))
@@ -465,13 +468,13 @@ static void reply_callback(struct unicast_conn *c, const linkaddr_t *from)
             // if the source is not me forward reply to all nodes waiting
             if(rep.src.u8[1] != linkaddr_node_addr.u8[1])
             {
-            	printf("the source is not me, so i am sending reply to:%d\n",rep.src.u8[1]);
+//            	printf("the source is not me, so i am sending reply to:%d\n",rep.src.u8[1]);
                 rep.hops = rep.hops + 1;
                 for(i=0; i<MAX_TABLE_SIZE; i++){
                     if(discoveryTable[i].valid != 0
                         && discoveryTable[i].id == rep.id){
                             sendrep(&rep, discoveryTable[i].snd.u8[1]);
-                            printf("sending reply to %d\n",discoveryTable[i].snd.u8[1]);
+//                            printf("sending reply to %d\n",discoveryTable[i].snd.u8[1]);
                     }
                 }
             }
@@ -491,15 +494,16 @@ static void request_callback(struct broadcast_conn *c, const linkaddr_t *from)
     static REQ_PACKAGE req;
     static REP_PACKAGE rep;
 
-    printf("\n--------Request received--------\n");
+//    printf("\n--------Request received--------\n");
     packetbuf_copyto(&req);
+    printf("REQ;\n");
 
     // case REQUEST package received
     if(strcmp(req.head, REQ_H) == 0)
     {
     	packetbuf_clear();
-        printf("ROUTE_REQUEST received from %d [ID:%d, Dest:%d, Src:%d]\n",
-                        from->u8[1], req.id, req.dest.u8[1], req.src.u8[1]);
+//        printf("ROUTE_REQUEST received from %d [ID:%d, Dest:%d, Src:%d]\n",
+//                        from->u8[1], req.id, req.dest.u8[1], req.src.u8[1]);
 
         // case destination is me
         if(req.dest.u8[1] == linkaddr_node_addr.u8[1])
