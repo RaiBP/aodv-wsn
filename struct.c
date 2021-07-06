@@ -27,6 +27,7 @@ int packet2data(char* package, struct DATA_PACKAGE* data){
 	printf("--------packet2data--------\n");
 	if(strncmp(package, "DATA", 4) == 0){
 		printf("Is data!\n");
+		printf("data package: %s\n",package);
 		// id
 		id[0] = package[8];
 		id[1] = package[9];
@@ -39,6 +40,7 @@ int packet2data(char* package, struct DATA_PACKAGE* data){
 		data->dest.u8[1] = atoi(dest);
 		// route
 		data->route[0] = package[71] - 48;
+//		printf("packet to data route[0] is: %d, package[71] is : %d\n",data->route[0], package[71]);
 		data->route[1] = package[73] - 48;
 		data->route[2] = package[75] - 48;
 		data->route[3] = package[77] - 48;

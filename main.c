@@ -134,9 +134,12 @@ PROCESS_THREAD(data_process, ev, data){
 			data_pkg.src.u8[1] = linkaddr_node_addr.u8[1];
 			sprintf(data_pkg.message, DATA_PAY, getTemperatureValue(), getLuxValue());
 			data_pkg.hops = 0;
-			data_pkg.route[6] = "000000";
+			//for(int i=0; i<MAX_NODES; i++){
+				//data_pkg.route[i] = "0";
+			//}
 			data_pkg.route[0] = linkaddr_node_addr.u8[1];
-			//printf("route is %d\n", data_pkg.route[0]);
+			printf("route is %d,%d\n", data_pkg.route[0], data_pkg.route[1]);
+
 
 			id = (id<99) ? id+1 : 1;
 
@@ -158,13 +161,16 @@ PROCESS_THREAD(data_process, ev, data){
 			printf("data package route now is:%d,%d,%d,%d,%d,%d\n",((struct DATA_PACKAGE*)data)->route[0],((struct DATA_PACKAGE*)data)->route[1],
 					((struct DATA_PACKAGE*)data)->route[2],((struct DATA_PACKAGE*)data)->route[3],((struct DATA_PACKAGE*)data)->route[4],
 					((struct DATA_PACKAGE*)data)->route[5]);
-
-			data_pkg.route[0] = ((struct DATA_PACKAGE*)data)->route[0];
-			data_pkg.route[1] = ((struct DATA_PACKAGE*)data)->route[1];
-			data_pkg.route[2] = ((struct DATA_PACKAGE*)data)->route[2];
-			data_pkg.route[3] = ((struct DATA_PACKAGE*)data)->route[3];
-			data_pkg.route[4] = ((struct DATA_PACKAGE*)data)->route[4];
-			data_pkg.route[5] = ((struct DATA_PACKAGE*)data)->route[5];
+			for(int i=0; i<h; i++){
+				data_pkg.route[i] = ((struct DATA_PACKAGE*)data)->route[i];
+						}
+//			data_pkg.route[0] = ((struct DATA_PACKAGE*)data)->route[0];
+//			data_pkg.route[1] = ((struct DATA_PACKAGE*)data)->route[1];
+//			data_pkg.route[2] = ((struct DATA_PACKAGE*)data)->route[2];
+//			data_pkg.route[3] = ((struct DATA_PACKAGE*)data)->route[3];
+//			data_pkg.route[4] = ((struct DATA_PACKAGE*)data)->route[4];
+//			data_pkg.route[5] = ((struct DATA_PACKAGE*)data)->route[5];
+			printf("the current h. route in data packet is%d, my adress is %d \n",data_pkg.route[h-1], linkaddr_node_addr.u8[1]);
 			if(data_pkg.route[h-1] != linkaddr_node_addr.u8[1]){
 				data_pkg.route[h] = linkaddr_node_addr.u8[1];
 			}
@@ -183,6 +189,7 @@ PROCESS_THREAD(data_process, ev, data){
 				printf("Route exists, so sending message\n");
 				printf("Sending message: %s\n", data_pkg.message);
 				printf("The data package id is:%d, src is :%d\n",data_pkg.id,data_pkg.src.u8[1]);
+
 				senddata(&data_pkg, next);
 				// add to waiting table wait for ack
 				addToWaitingAckTable(&data_pkg);
