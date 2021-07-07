@@ -27,48 +27,6 @@
      </rect>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_send">
-    <property name="enabled">
-     <bool>false</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>230</y>
-      <width>121</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Send</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_2">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>170</y>
-      <width>111</width>
-      <height>17</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Command</string>
-    </property>
-   </widget>
-   <widget class="QPlainTextEdit" name="plainTextEdit_command">
-    <property name="enabled">
-     <bool>false</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>190</y>
-      <width>121</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
@@ -108,7 +66,7 @@
      </item>
     </layout>
    </widget>
-   <widget class="QProgressBar" name="progressBar_battery">
+   <widget class="QProgressBar" name="progressBar_lux">
     <property name="geometry">
      <rect>
       <x>760</x>
@@ -133,7 +91,7 @@
      <bool>false</bool>
     </property>
    </widget>
-   <widget class="QLCDNumber" name="lcdNumber_light">
+   <widget class="QLCDNumber" name="lcdNumber_temp">
     <property name="geometry">
      <rect>
       <x>620</x>
@@ -152,20 +110,20 @@
      <enum>QLCDNumber::Flat</enum>
     </property>
    </widget>
-   <widget class="QLabel" name="label_battery">
+   <widget class="QLabel" name="label_lux">
     <property name="geometry">
      <rect>
       <x>750</x>
       <y>80</y>
-      <width>101</width>
+      <width>111</width>
       <height>16</height>
      </rect>
     </property>
     <property name="text">
-     <string>Battery Value</string>
+     <string>Luminity Value</string>
     </property>
    </widget>
-   <widget class="QProgressBar" name="progressBar_light">
+   <widget class="QProgressBar" name="progressBar_temp">
     <property name="geometry">
      <rect>
       <x>620</x>
@@ -190,7 +148,7 @@
      <bool>false</bool>
     </property>
    </widget>
-   <widget class="QLabel" name="label_light">
+   <widget class="QLabel" name="label_temp">
     <property name="geometry">
      <rect>
       <x>610</x>
@@ -203,7 +161,7 @@
      <string>Temp Value</string>
     </property>
    </widget>
-   <widget class="QLCDNumber" name="lcdNumber_battery">
+   <widget class="QLCDNumber" name="lcdNumber_lux">
     <property name="geometry">
      <rect>
       <x>760</x>

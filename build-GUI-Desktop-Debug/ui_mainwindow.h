@@ -19,7 +19,6 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
-#include <QtWidgets/QPlainTextEdit>
 #include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QStatusBar>
@@ -35,21 +34,18 @@ class Ui_MainWindow
 public:
     QWidget *centralWidget;
     QTextEdit *textEdit_Status;
-    QPushButton *pushButton_send;
-    QLabel *label_2;
-    QPlainTextEdit *plainTextEdit_command;
     QWidget *layoutWidget;
     QVBoxLayout *verticalLayout;
     QLabel *label;
     QComboBox *comboBox_Interface;
     QPushButton *pushButton_open;
     QPushButton *pushButton_close;
-    QProgressBar *progressBar_battery;
-    QLCDNumber *lcdNumber_light;
-    QLabel *label_battery;
-    QProgressBar *progressBar_light;
-    QLabel *label_light;
-    QLCDNumber *lcdNumber_battery;
+    QProgressBar *progressBar_lux;
+    QLCDNumber *lcdNumber_temp;
+    QLabel *label_lux;
+    QProgressBar *progressBar_temp;
+    QLabel *label_temp;
+    QLCDNumber *lcdNumber_lux;
     QWidget *layoutWidget_2;
     QVBoxLayout *verticalLayout_2;
     QLabel *label_source;
@@ -69,17 +65,6 @@ public:
         textEdit_Status->setObjectName(QStringLiteral("textEdit_Status"));
         textEdit_Status->setEnabled(true);
         textEdit_Status->setGeometry(QRect(160, 10, 431, 331));
-        pushButton_send = new QPushButton(centralWidget);
-        pushButton_send->setObjectName(QStringLiteral("pushButton_send"));
-        pushButton_send->setEnabled(false);
-        pushButton_send->setGeometry(QRect(20, 230, 121, 27));
-        label_2 = new QLabel(centralWidget);
-        label_2->setObjectName(QStringLiteral("label_2"));
-        label_2->setGeometry(QRect(20, 170, 111, 17));
-        plainTextEdit_command = new QPlainTextEdit(centralWidget);
-        plainTextEdit_command->setObjectName(QStringLiteral("plainTextEdit_command"));
-        plainTextEdit_command->setEnabled(false);
-        plainTextEdit_command->setGeometry(QRect(20, 190, 121, 31));
         layoutWidget = new QWidget(centralWidget);
         layoutWidget->setObjectName(QStringLiteral("layoutWidget"));
         layoutWidget->setGeometry(QRect(20, 10, 121, 118));
@@ -109,40 +94,40 @@ public:
 
         verticalLayout->addWidget(pushButton_close);
 
-        progressBar_battery = new QProgressBar(centralWidget);
-        progressBar_battery->setObjectName(QStringLiteral("progressBar_battery"));
-        progressBar_battery->setGeometry(QRect(760, 130, 71, 211));
-        progressBar_battery->setMaximum(40);
-        progressBar_battery->setValue(0);
-        progressBar_battery->setTextVisible(false);
-        progressBar_battery->setOrientation(Qt::Vertical);
-        progressBar_battery->setInvertedAppearance(false);
-        lcdNumber_light = new QLCDNumber(centralWidget);
-        lcdNumber_light->setObjectName(QStringLiteral("lcdNumber_light"));
-        lcdNumber_light->setGeometry(QRect(620, 100, 71, 23));
-        lcdNumber_light->setFrameShape(QFrame::Box);
-        lcdNumber_light->setFrameShadow(QFrame::Plain);
-        lcdNumber_light->setSegmentStyle(QLCDNumber::Flat);
-        label_battery = new QLabel(centralWidget);
-        label_battery->setObjectName(QStringLiteral("label_battery"));
-        label_battery->setGeometry(QRect(750, 80, 101, 16));
-        progressBar_light = new QProgressBar(centralWidget);
-        progressBar_light->setObjectName(QStringLiteral("progressBar_light"));
-        progressBar_light->setGeometry(QRect(620, 130, 71, 211));
-        progressBar_light->setMaximum(40);
-        progressBar_light->setValue(0);
-        progressBar_light->setTextVisible(false);
-        progressBar_light->setOrientation(Qt::Vertical);
-        progressBar_light->setInvertedAppearance(false);
-        label_light = new QLabel(centralWidget);
-        label_light->setObjectName(QStringLiteral("label_light"));
-        label_light->setGeometry(QRect(610, 80, 91, 16));
-        lcdNumber_battery = new QLCDNumber(centralWidget);
-        lcdNumber_battery->setObjectName(QStringLiteral("lcdNumber_battery"));
-        lcdNumber_battery->setGeometry(QRect(760, 100, 71, 23));
-        lcdNumber_battery->setFrameShape(QFrame::Box);
-        lcdNumber_battery->setFrameShadow(QFrame::Plain);
-        lcdNumber_battery->setSegmentStyle(QLCDNumber::Flat);
+        progressBar_lux = new QProgressBar(centralWidget);
+        progressBar_lux->setObjectName(QStringLiteral("progressBar_lux"));
+        progressBar_lux->setGeometry(QRect(760, 130, 71, 211));
+        progressBar_lux->setMaximum(40);
+        progressBar_lux->setValue(0);
+        progressBar_lux->setTextVisible(false);
+        progressBar_lux->setOrientation(Qt::Vertical);
+        progressBar_lux->setInvertedAppearance(false);
+        lcdNumber_temp = new QLCDNumber(centralWidget);
+        lcdNumber_temp->setObjectName(QStringLiteral("lcdNumber_temp"));
+        lcdNumber_temp->setGeometry(QRect(620, 100, 71, 23));
+        lcdNumber_temp->setFrameShape(QFrame::Box);
+        lcdNumber_temp->setFrameShadow(QFrame::Plain);
+        lcdNumber_temp->setSegmentStyle(QLCDNumber::Flat);
+        label_lux = new QLabel(centralWidget);
+        label_lux->setObjectName(QStringLiteral("label_lux"));
+        label_lux->setGeometry(QRect(750, 80, 111, 16));
+        progressBar_temp = new QProgressBar(centralWidget);
+        progressBar_temp->setObjectName(QStringLiteral("progressBar_temp"));
+        progressBar_temp->setGeometry(QRect(620, 130, 71, 211));
+        progressBar_temp->setMaximum(40);
+        progressBar_temp->setValue(0);
+        progressBar_temp->setTextVisible(false);
+        progressBar_temp->setOrientation(Qt::Vertical);
+        progressBar_temp->setInvertedAppearance(false);
+        label_temp = new QLabel(centralWidget);
+        label_temp->setObjectName(QStringLiteral("label_temp"));
+        label_temp->setGeometry(QRect(610, 80, 91, 16));
+        lcdNumber_lux = new QLCDNumber(centralWidget);
+        lcdNumber_lux->setObjectName(QStringLiteral("lcdNumber_lux"));
+        lcdNumber_lux->setGeometry(QRect(760, 100, 71, 23));
+        lcdNumber_lux->setFrameShape(QFrame::Box);
+        lcdNumber_lux->setFrameShadow(QFrame::Plain);
+        lcdNumber_lux->setSegmentStyle(QLCDNumber::Flat);
         layoutWidget_2 = new QWidget(centralWidget);
         layoutWidget_2->setObjectName(QStringLiteral("layoutWidget_2"));
         layoutWidget_2->setGeometry(QRect(610, 10, 121, 61));
@@ -181,13 +166,11 @@ public:
     void retranslateUi(QMainWindow *MainWindow)
     {
         MainWindow->setWindowTitle(QApplication::translate("MainWindow", "MainWindow", Q_NULLPTR));
-        pushButton_send->setText(QApplication::translate("MainWindow", "Send", Q_NULLPTR));
-        label_2->setText(QApplication::translate("MainWindow", "Command", Q_NULLPTR));
         label->setText(QApplication::translate("MainWindow", "Port", Q_NULLPTR));
         pushButton_open->setText(QApplication::translate("MainWindow", "Open", Q_NULLPTR));
         pushButton_close->setText(QApplication::translate("MainWindow", "Close", Q_NULLPTR));
-        label_battery->setText(QApplication::translate("MainWindow", "Battery Value", Q_NULLPTR));
-        label_light->setText(QApplication::translate("MainWindow", "Temp Value", Q_NULLPTR));
+        label_lux->setText(QApplication::translate("MainWindow", "Luminity Value", Q_NULLPTR));
+        label_temp->setText(QApplication::translate("MainWindow", "Temp Value", Q_NULLPTR));
         label_source->setText(QApplication::translate("MainWindow", "Source", Q_NULLPTR));
     } // retranslateUi
 

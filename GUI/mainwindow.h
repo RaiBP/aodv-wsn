@@ -33,7 +33,7 @@ private slots:
         void on_pushButton_open_clicked();  // Open a port.
         void receive();                     // Receives data from a port.
 
-        void on_pushButton_send_clicked();  // Sends the command specified.
+
         void on_comboBox_Interface_source_currentIndexChanged(const QString &arg1);
 };
 

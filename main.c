@@ -64,10 +64,11 @@ static struct ROUTING_TABLE routingTable;
 PROCESS(initial_process, "Initialize the routing table and open connections");
 PROCESS(data_process, "Send data.");
 PROCESS(request_process, "Handle REQ_PACKAGE messages");
+PROCESS(reply_process, "Send reply.");
 PROCESS(aging_process, "Decide the expiration of tables");
 
 
-AUTOSTART_PROCESSES(&initial_process, &data_process, &request_process, &aging_process);
+AUTOSTART_PROCESSES(&initial_process, &data_process, &request_process, &reply_process, &aging_process);
 
 PROCESS_THREAD(initial_process, ev, data){
 
@@ -135,8 +136,10 @@ PROCESS_THREAD(data_process, ev, data){
 			data_pkg.src.u8[1] = linkaddr_node_addr.u8[1];
 			sprintf(data_pkg.message, DATA_PAY, getTemperatureValue(), getLuxValue());
 			data_pkg.hops = 0;
+			for(int i = 0; i<MAX_NODES; i++){
+				data_pkg.route[i].u8[1] = 0;
+			}
 			data_pkg.route[0].u8[1] = linkaddr_node_addr.u8[1];
-			data_pkg.route[1].u8[1] = 0;
 			printf("route is %d,%d,%d,%d,%d,%d\n", data_pkg.route[0].u8[1], data_pkg.route[1].u8[1], data_pkg.route[2].u8[1], data_pkg.route[3].u8[1], data_pkg.route[4].u8[1], data_pkg.route[5].u8[1]);
 
 
@@ -146,7 +149,7 @@ PROCESS_THREAD(data_process, ev, data){
 			etimer_set(&et, CLOCK_CONF_SECOND * DATA_DELTA_TIME);
 		}
 		// Forward data
-		else{
+		else if(ev != PROCESS_EVENT_TIMER){
 			printf("Forwarding data...\n");
 			strcpy(data_pkg.head, ((DATA_PACKAGE*)data)->head);
 			data_pkg.dest.u8[0] = ((DATA_PACKAGE*)data)->dest.u8[0];
@@ -236,6 +239,36 @@ PROCESS_THREAD(request_process, ev, data)
         addEntryToDiscoveryTable((struct DISCOVERY_TABLE*)data);    //create entry in routing discovery table
 
         sendreq(&req);    //broadcasts the REQUEST
+    }
+
+    PROCESS_END();
+}
+
+/**
+ * Perform the outgoing Reply route
+ */
+PROCESS_THREAD(reply_process, ev, data)
+{
+    static REP_PACKAGE rep;
+
+    PROCESS_BEGIN();
+
+    while(1)
+    {
+        leds_off(LEDS_YELLOW);
+
+        PROCESS_WAIT_EVENT_UNTIL(ev != sensors_event);
+
+        leds_on(LEDS_YELLOW);
+
+        strcpy(rep.head, REP_H);
+        rep.id = ((REP_PACKAGE*)data)->id;
+        rep.src = ((REP_PACKAGE*)data)->src;
+        rep.dest = ((REP_PACKAGE*)data)->dest;
+        rep.hops = ((REP_PACKAGE*)data)->hops;
+        rep.rssi = ((REP_PACKAGE*)data)->rssi;
+
+        sendrep(&rep, ((REP_PACKAGE*)data)->from.u8[1]);    //broadcasts the REQUEST
     }
 
     PROCESS_END();
@@ -376,19 +409,15 @@ PROCESS_THREAD(aging_process, ev, data)
 static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
     static DATA_PACKAGE data;
     static ACK_PACKAGE ack;
-    static char data_packet[DATA_LEN];
 
-//    printf("\n--------Data received--------\n");
+    printf("\n--------Data received--------\n");
     packetbuf_copyto(&data);
 
-//    printf("Received data: %s\n", data_packet);
-
+    printf("From: %d\n", from->u8[1]);
     if(strcmp(data.head,DATA_H) == 0){
     	packetbuf_clear();
         // if the destination is itself
         if(data.dest.u8[1] == linkaddr_node_addr.u8[1]){
-//            printf("DATA RECEIVED of src %d:\n{%s}\n with Route:{%d,%d,%d,%d,%d,%d}\n", data.src.u8[1], data.message,
-//            		data.route[0].u8[1], data.route[1].u8[1], data.route[2].u8[1], data.route[3].u8[1], data.route[4].u8[1], data.route[5].u8[1]);
         	printf("%s;%d;%d;%d;%s;%d,%d,%d,%d,%d,%d;%d\n", data.head, data.id, data.src.u8[1], data.dest.u8[1], data.message,
         			data.route[0].u8[1], data.route[1].u8[1], data.route[2].u8[1], data.route[3].u8[1],
 					data.route[4].u8[1], data.route[5].u8[1], data.hops);
@@ -408,7 +437,7 @@ static void data_callback(struct unicast_conn *c, const linkaddr_t *from){
     }
     // case not data package
     else{
-        printf("Incorrect data package: %s\n", data_packet);
+        printf("Incorrect data package\n");
     }
     packetbuf_clear();
 }
@@ -417,12 +446,11 @@ static void ack_callback(struct unicast_conn *c, const linkaddr_t *from){
     static ACK_PACKAGE ack;
     static char ack_packet[ACK_LEN];
 
-//    printf("\n--------Ack received--------\n");
+    printf("\n--------Ack received--------\n");
 
     packetbuf_copyto(&ack);
 //    printf("ack from: %d, src: %d\n", from->u8[1], ack.src.u8[1]);
-//    printf("strcmp(ack.head, ACK_H): %d\n", strcmp(ack.head, ACK_H) == 0);
-    printf("ACK;\n");
+//    printf("ACK;\n");
     if(strcmp(ack.head, ACK_H) == 0){
     	packetbuf_clear();
     	for(int i = 0; i < MAX_WAIT_DATA; i++){
@@ -449,10 +477,10 @@ static void reply_callback(struct unicast_conn *c, const linkaddr_t *from)
     static REP_PACKAGE rep;
     static int i;
 
-//    printf("\n--------Reply received--------\n");
+    printf("\n--------Reply received--------\n");
 
     packetbuf_copyto(&rep);
-    printf("REP;\n");
+//    printf("REP;\n");
 
     // if REPLY package received
     if(strcmp(rep.head, REP_H) == 0)
@@ -462,24 +490,27 @@ static void reply_callback(struct unicast_conn *c, const linkaddr_t *from)
 //                        from->u8[1], rep.id, rep.dest.u8[1], rep.src.u8[1], rep.hops, rep.rssi);
 
         // check if reply table updates
-//        if(updateRoutingTable(&rep, from))
-//        {
-        	updateRoutingTable(&rep, from);
+        if(updateRoutingTable(&rep, from))
+        {
             // if the source is not me forward reply to all nodes waiting
             if(rep.src.u8[1] != linkaddr_node_addr.u8[1])
             {
 //            	printf("the source is not me, so i am sending reply to:%d\n",rep.src.u8[1]);
-                rep.hops = rep.hops + 1;
                 for(i=0; i<MAX_TABLE_SIZE; i++){
                     if(discoveryTable[i].valid != 0
-                        && discoveryTable[i].id == rep.id){
-                            sendrep(&rep, discoveryTable[i].snd.u8[1]);
+                        && discoveryTable[i].id == rep.id
+						&& discoveryTable[i].src.u8[1] == rep.src.u8[1]){
+                        rep.hops = rep.hops + 1;
+                    	rep.from.u8[1] = discoveryTable[i].snd.u8[1];
+//                    	sendrep(&rep, discoveryTable[i].snd.u8[1]);
+                    	process_post(&reply_process, PROCESS_EVENT_CONTINUE, &rep);
+                        discoveryTable[i].valid = 0;
 //                            printf("sending reply to %d\n",discoveryTable[i].snd.u8[1]);
                     }
                 }
             }
             clearDiscovery(&rep);
-//        }
+        }
     }
     packetbuf_clear();
 }
@@ -494,9 +525,9 @@ static void request_callback(struct broadcast_conn *c, const linkaddr_t *from)
     static REQ_PACKAGE req;
     static REP_PACKAGE rep;
 
-//    printf("\n--------Request received--------\n");
+    printf("\n--------Request received--------\n");
     packetbuf_copyto(&req);
-    printf("REQ;\n");
+//    printf("REQ;\n");
 
     // case REQUEST package received
     if(strcmp(req.head, REQ_H) == 0)
@@ -508,27 +539,39 @@ static void request_callback(struct broadcast_conn *c, const linkaddr_t *from)
         // case destination is me
         if(req.dest.u8[1] == linkaddr_node_addr.u8[1])
         {
-        	strcpy(rep.head, REP_H);
             rep.id = req.id;
             rep.src = req.src;
             rep.dest = req.dest;
             rep.hops = 0;
             rep.rssi = INF_RSSI;
+            rep.from.u8[1] = from->u8[1];
 
             //sends a REPLY to the Request sender
-            sendrep(&rep, from->u8[1]);
+//            sendrep(&rep, from->u8[1]);
+            process_post(&reply_process, PROCESS_EVENT_CONTINUE, &rep);
 
         }
         // case the destination is NOT me AND the Request is new
         else if(isDuplicateReq(&req)==0)
         {
-            req_info.id = req.id;
-            req_info.src = req.src;
-            req_info.dest = req.dest;
-            req_info.snd.u8[1] = from->u8[1];
+        	if (routingTable.valid != 0){		//If route exists
+        		rep.id = req.id;
+        		rep.src = req.src;
+        		rep.dest = req.dest;
+        		rep.hops = routingTable.hops + 1;
+        		rep.rssi = routingTable.rssi;
+        		rep.from.u8[1] = from->u8[1];
 
-            //wakes up the request process
-            process_post(&request_process, PROCESS_EVENT_CONTINUE, &req_info);
+//        		sendrep(&rep, from->u8[1]);
+        		process_post(&reply_process, PROCESS_EVENT_CONTINUE, &rep);
+        	}else{
+        		req_info.id = req.id;
+        		req_info.src = req.src;
+        		req_info.dest = req.dest;
+        		req_info.snd.u8[1] = from->u8[1];
+        		//wakes up the request process
+        		process_post(&request_process, PROCESS_EVENT_CONTINUE, &req_info);
+        	}
         }
         // case the Request is duplicated
         else
@@ -762,16 +805,16 @@ static void sendreq(REQ_PACKAGE* req)
  */
 static void sendrep(REP_PACKAGE* rep, int next)
 {
-    static linkaddr_t to_rimeaddr;
-    to_rimeaddr.u8[1]=next;
-    to_rimeaddr.u8[0]=0;
+    static linkaddr_t next_addr;
+    next_addr.u8[1]=next;
+    next_addr.u8[0]=0;
 
     printf("\n--------Reply sending--------\n");
 
     packetbuf_clear();
     packetbuf_copyfrom(rep, sizeof(REP_PACKAGE));
-    unicast_send(&rep_conn, &to_rimeaddr);
-    printf("to_rimeaddr is now:%d\n", to_rimeaddr.u8[1]);
+    unicast_send(&rep_conn, &next_addr);
+    printf("next_addr is now:%d\n", next_addr.u8[1]);
 
     printf("Sending ROUTE_REPLY toward %d via %d [ID:%d, Dest:%d, Src:%d, Hops:%d]\n",
             rep->src.u8[1], next, rep->id, rep->dest.u8[1], rep->src.u8[1], rep->hops);

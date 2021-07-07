@@ -67,6 +67,7 @@ typedef struct{
 	uint8_t id;
 	linkaddr_t src;
 	linkaddr_t dest;
+	linkaddr_t from;
 	uint8_t hops;
 	int16_t rssi;
 

@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <qdebug.h>
+#include <QFile>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -23,7 +24,23 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->textEdit_Status->insertPlainText("No USB ports available.\nConnect a USB device and try again.");
     }
 
-    ui->comboBox_Interface_source->addItem("All");
+    //Initialize comboBox
+        ui->comboBox_Interface_source->addItem("All");
+        QFile file("./Data.txt");
+        file.open(QIODevice::ReadOnly);
+        QString lines[file_size] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+        for(int i = 0; i < file_size; i++){
+            lines[i] = file.readLine();
+            if(lines[i] != "" && lines[i] != "\n" && lines[i] != "\r\n"){
+                qDebug() << "Data.txt: line " << i+1 << " :" << lines[i];
+                if(combo_flags[i] == 0){
+                    qDebug() << "Add source " << i+1 << "to comboBox.";
+                    ui->comboBox_Interface_source->addItem(QString::number(i+1));
+                    combo_flags[i] = 1;
+                }
+            }
+        }
+        file.close();
 }
 
 MainWindow::~MainWindow()
@@ -65,8 +82,6 @@ void MainWindow::on_pushButton_open_clicked() {
     ui->pushButton_open->setEnabled(false);
     ui->comboBox_Interface->setEnabled(false);
 
-    ui->pushButton_send->setEnabled(true);
-    ui->plainTextEdit_command->setEnabled(true);
 }
 
 // SLOT: Closes the port and re-enables the open button.
@@ -77,20 +92,6 @@ void MainWindow::on_pushButton_close_clicked()
     ui->pushButton_open->setEnabled(true);
     ui->comboBox_Interface->setEnabled(true);
 
-    ui->pushButton_send->setEnabled(false);
-    ui->plainTextEdit_command->setEnabled(false);
-}
-
-// SLOT: Sends whatever is written on plainTextEdit_command to the USB port.
-void MainWindow::on_pushButton_send_clicked() {
-
-    QString command;
-    command = ui->plainTextEdit_command->toPlainText();
-
-    QByteArray byteArray = command.toLocal8Bit();
-
-    byteArray.append('\n');
-    port.write(byteArray);
 }
 
 // SLOT: Prints data received from the port on the QTextEdit widget.
@@ -135,7 +136,7 @@ void MainWindow::receive()
 
                     addToFile(temp, lux, src);
                     qDebug() << "current comboBox text: " << ui->comboBox_Interface_source->currentText();
-                    if((ui->comboBox_Interface_source->currentText() == src) || (ui->comboBox_Interface_source->currentText() == "All")){
+                    if((ui->comboBox_Interface_source->currentText().toInt() == src) || (ui->comboBox_Interface_source->currentText() == "All")){
                         updateProgressBar(temp, lux);
                     }
                 }
@@ -161,13 +162,13 @@ void MainWindow::addToFile(double temp, double batt, int src){
     file2.open(QIODevice::WriteOnly | QFile::Truncate);
     QTextStream out(&file2);
     if(src < file_size){
-        lines[src-1] = QString::number(temp) + " " + QString::number(batt);         //z.B. '24 12'
+        lines[src-1] = QString::number(temp) + " " + QString::number(batt) + "\n";         //z.B. '24 12'
         qDebug() << "Add to file: " << lines[src-1];
     }
 
     for(int i = 0; i < file_size; i++){
-
-        if(lines[i] == "" || lines[i] == "\n"){
+        qDebug() << "line " << i+1 << ":" << lines[i];
+        if(lines[i] == "" || lines[i] == "\n" || lines[i] == "\r\n"){
             qDebug() << "Add empty line";
             out << endl;
         }else{
@@ -186,16 +187,16 @@ void MainWindow::addToFile(double temp, double batt, int src){
 void MainWindow::updateProgressBar(double temp, double lux){
     temp = temp / 1000;
     printf("Temperature: %f\n",temp);
-    ui->progressBar_light->setMaximum(40);
+    ui->progressBar_temp->setMaximum(40);
     qDebug() << "Temp value " << QString::number(temp);
-    ui->lcdNumber_light->display(temp);
-    ui->progressBar_light->setValue((int)temp);
+    ui->lcdNumber_temp->display(temp);
+    ui->progressBar_temp->setValue((int)temp);
 
     printf("Battery: %f\n",lux);
-    ui->progressBar_battery->setMaximum(1000);
+    ui->progressBar_lux->setMaximum(1000);
     qDebug() << "Temp value " << QString::number(lux);
-    ui->lcdNumber_battery->display(lux);
-    ui->progressBar_battery->setValue((int)lux);
+    ui->lcdNumber_lux->display(lux);
+    ui->progressBar_lux->setValue((int)lux);
 }
 
 void MainWindow::on_comboBox_Interface_source_currentIndexChanged(const QString &arg1)
