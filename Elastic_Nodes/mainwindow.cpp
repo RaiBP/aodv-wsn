@@ -10,6 +10,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
+    widget->show();
+
     // Get all available COM Ports and store them in a QList.
     QList<QextPortInfo> ports = QextSerialEnumerator::getPorts();
 
@@ -114,45 +116,29 @@ void MainWindow::receive()
         if(data_list.at(0) == "DATA"){      // data is received     DATA;ID:%2d;SRC:%1d;DEST:%1d;PAYLOAD:%s
             int route_array [6];
             int src = 0;
-            for(int i=1; i < data_list.size(); i++)
-                {
-                    qDebug() << "data list value " << i << " " << data_list.at(i);
-                    QString str = data_list.at(i);
-                    if(str.contains("PAYLOAD:")){       //PAYLOAD:Temperature %d Luminance %d
-                        QStringList pay_list = str.split(" ");
-                        qDebug() << "pay_list(0): " << pay_list.at(0);  //PAYLOAD:Temperature
-                        qDebug() << "pay_list(1): " << pay_list.at(1);  //'Temperature value'
-                        qDebug() << "pay_list(2): " << pay_list.at(2);  //Luminance
-                        qDebug() << "pay_list(3): " << pay_list.at(3);  //'Battery value'
-                        temp = pay_list.at(1).toDouble();
-                        batt = pay_list.at(3).toDouble();
-                    }
-                    if(str.contains("ROUTE:")){       //ROUTE:%d,%d,%d,%d,%d,%d
-                        QStringList route_list = str.split(",");
-                        qDebug() << "route_list(0): " << route_list.at(0);  //ROUTE:node1
-                        qDebug() << "route_list(1): " << route_list.at(1);  //'Temperature value'
-                        qDebug() << "route_list(2): " << route_list.at(2);  //Luminance
-                        qDebug() << "route_list(3): " << route_list.at(3);  //'Battery value'
-                        qDebug() << "route_list(4): " << route_list.at(4);  //'Temperature value'
-                        qDebug() << "proute_list(5): " << route_list.at(5);  //Luminance
-                        route_array[0] = route_list.at(0).split(":").at(1).toInt();
-                        route_array[1] = route_list.at(1).toInt();
-                        route_array[2] = route_list.at(2).toInt();
-                        route_array[3] = route_list.at(3).toInt();
-                        route_array[4] = route_list.at(4).toInt();
-                        route_array[5] = route_list.at(5).toInt();
-                    }
-                }
-            addToFile(temp, batt, src);
-            qDebug() << "current comboBox text: " << ui->comboBox_Interface_source->currentText();
-            if((ui->comboBox_Interface_source->currentText() == src) || (ui->comboBox_Interface_source->currentText() == "All")){
-                updateProgressBar(temp, batt);
-            }
+
+            qDebug() << "Route data " << data_list.at(5);
+            QString str = data_list.at(5);
+
+            QStringList route_list = str.split(",");
+            qDebug() << "route_list(0): " << route_list.at(0);  //ROUTE:node1
+            qDebug() << "route_list(1): " << route_list.at(1);  //'Temperature value'
+            qDebug() << "route_list(2): " << route_list.at(2);  //Luminance
+            qDebug() << "route_list(3): " << route_list.at(3);  //'Battery value'
+            qDebug() << "route_list(4): " << route_list.at(4);  //'Temperature value'
+            qDebug() << "route_list(5): " << route_list.at(5);  //Luminance
+            route_array[0] = route_list.at(0).toInt();
+            route_array[1] = route_list.at(1).toInt();
+            route_array[2] = route_list.at(2).toInt();
+            route_array[3] = route_list.at(3).toInt();
+            route_array[4] = route_list.at(4).toInt();
+            route_array[5] = route_list.at(5).toInt();
+
 
             widget->addToRouteList(route_array, src);
             widget->drawRoutes();
+            }
         }
-    }
 }
 
 void MainWindow::addToFile(double temp, double batt, int src){

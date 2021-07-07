@@ -55,7 +55,7 @@
 #include <math.h>
 #include <iostream>
 #include <list>
-
+#include <qdebug.h>
 #include <QKeyEvent>
 #include <QRandomGenerator>
 
@@ -87,6 +87,15 @@ GraphWidget::GraphWidget(QWidget *parent)
     Node *node5 = new Node(this);
     Node *node6 = new Node(this);
     Node *node7 = new Node(this);
+
+    setNode(node1, 1);
+    setNode(node2, 2);
+    setNode(node3, 3);
+    setNode(node4, 4);
+    setNode(node5, 5);
+    setNode(node6, 6);
+    setNode(node7, 7);
+
 
     scene->addItem(node1);
     scene->addItem(node2);
@@ -216,12 +225,35 @@ void GraphWidget::drawRoutes()
 {
     scene()->clear(); // clear all items from scene
 
+    Node *node1 = new Node(this); // Receiving Node
+    Node *node2 = new Node(this);
+    Node *node3 = new Node(this);
+    Node *node4 = new Node(this);
+    Node *node5 = new Node(this);
+    Node *node6 = new Node(this);
+    Node *node7 = new Node(this);
+
+    setNode(node1, 1);
+    setNode(node2, 2);
+    setNode(node3, 3);
+    setNode(node4, 4);
+    setNode(node5, 5);
+    setNode(node6, 6);
+    setNode(node7, 7);
+
+    qDebug() << "adding node1";
     scene()->addItem(node1);
+    qDebug() << "adding node2";
     scene()->addItem(node2);
+    qDebug() << "adding node3";
     scene()->addItem(node3);
+    qDebug() << "adding node4";
     scene()->addItem(node4);
+    qDebug() << "adding node5";
     scene()->addItem(node5);
+    qDebug() << "adding node6";
     scene()->addItem(node6);
+    qDebug() << "adding node7";
     scene()->addItem(node7);
 
     node1->setPos(0, 0);
@@ -245,58 +277,10 @@ void GraphWidget::drawRoute(Route r)
         Node *prev;
         Node *next;
 
-        switch (c.prv)
-        {
-            case 1:
-                prev = node1;
-                break;
-            case 2:
-                prev = node2;
-                break;
-            case 3:
-                prev = node3;
-                break;
-            case 4:
-                prev = node4;
-                break;
-            case 5:
-                prev = node5;
-                break;
-            case 6:
-                prev = node6;
-                break;
-            case 7:
-                prev = node7;
-                break;
-        }
-
-        switch (c.nxt)
-        {
-            case 1:
-                next = node1;
-                break;
-            case 2:
-                next = node2;
-                break;
-            case 3:
-                next = node3;
-                break;
-            case 4:
-                next = node4;
-                break;
-            case 5:
-                next = node5;
-                break;
-            case 6:
-                next = node6;
-                break;
-            case 7:
-                next = node7;
-                break;
-        }
+        prev = getNode(c.prv);
+        next = getNode(c.nxt);
 
         scene()->addItem(new Edge(prev, next));
-
     }
 
 }

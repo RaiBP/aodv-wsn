@@ -27,6 +27,7 @@ private:
     int combo_flags[9] = {0,0,0,0,0,0,0,0,0};
     GraphWidget *widget = new GraphWidget;
 
+
     void addToFile(double temp, double batt, int src);
     void updateProgressBar(double temp, double batt);
 

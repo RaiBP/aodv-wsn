@@ -1,4 +1,4 @@
-/****************************************************************************
+﻿/****************************************************************************
 **
 ** Copyright (C) 2016 The Qt Company Ltd.
 ** Contact: https://www.qt.io/licensing/
@@ -105,6 +105,17 @@ class GraphWidget : public QGraphicsView
 {
     Q_OBJECT
 
+private:
+    int timerId = 0;
+    std::list<Route> route_list;
+    Node *node1;
+    Node *node2;
+    Node *node3;
+    Node *node4;
+    Node *node5;
+    Node *node6;
+    Node *node7;
+
 public:
     GraphWidget(QWidget *parent = nullptr);
     void addToRouteList(int route_array[], int src);
@@ -112,6 +123,53 @@ public:
     void itemMoved();
     void drawRoute(Route r);
     std::list<Connection> getConnectionListfromArray(int route_array[]);
+
+    void setNode(Node *node, int node_id) {
+        switch (node_id)
+        {
+            case 1:
+                node1 = node;
+                break;
+            case 2:
+                node2 = node;
+                break;
+            case 3:
+                node3 = node;
+                break;
+            case 4:
+                node4 = node;
+                break;
+            case 5:
+                node5 = node;
+                break;
+            case 6:
+                node6 = node;
+                break;
+            case 7:
+                node7 = node;
+                break;
+        }
+    }
+
+    Node *getNode(int node_id) {
+        switch (node_id)
+        {
+            case 1:
+                return node1;
+            case 2:
+                return node2;
+            case 3:
+                return node3;
+            case 4:
+                return node4;
+            case 5:
+                return node5;
+            case 6:
+                return node6;
+            case 7:
+                return node7;
+        }
+    }
 
 public slots:
     void shuffle();
@@ -128,16 +186,6 @@ protected:
 
     void scaleView(qreal scaleFactor);
 
-private:
-    int timerId = 0;
-    std::list<Route> route_list;
-    Node *node1;
-    Node *node2;
-    Node *node3;
-    Node *node4;
-    Node *node5;
-    Node *node6;
-    Node *node7;
 };
 //! [0]
 
