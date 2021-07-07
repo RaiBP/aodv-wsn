@@ -190,8 +190,15 @@ void MainWindow::updateProgressBar(double temp, double lux){
     ui->progressBar_temp->setMaximum(40);
     qDebug() << "Temp value " << QString::number(temp);
     ui->lcdNumber_temp->display(temp);
-    ui->progressBar_temp->setValue((int)temp);
 
+    if(temp < 27){
+        ui->progressBar_temp->setStyleSheet("QProgressBar{background:white;} QProgressBar::chunk{border-radius:5px;background:#05B8CC}");
+    }
+    else{
+        ui->progressBar_temp->setStyleSheet("QProgressBar{background:white;} QProgressBar::chunk{border-radius:5px;background:green}");
+    }
+
+    ui->progressBar_temp->setValue((int)temp);
     printf("Battery: %f\n",lux);
     ui->progressBar_lux->setMaximum(1000);
     qDebug() << "Temp value " << QString::number(lux);
