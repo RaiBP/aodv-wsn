@@ -14,17 +14,23 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
+   <property name="styleSheet">
+    <string notr="true">background-color: #FFFFF0</string>
+   </property>
    <widget class="QTextEdit" name="textEdit_Status">
     <property name="enabled">
      <bool>true</bool>
     </property>
     <property name="geometry">
      <rect>
-      <x>160</x>
-      <y>10</y>
-      <width>431</width>
-      <height>331</height>
+      <x>40</x>
+      <y>330</y>
+      <width>561</width>
+      <height>51</height>
      </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: #FFFFFF</string>
     </property>
    </widget>
    <widget class="QWidget" name="layoutWidget">
@@ -74,6 +80,9 @@
       <width>71</width>
       <height>211</height>
      </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: #FFFFFF</string>
     </property>
     <property name="maximum">
      <number>40</number>
@@ -132,6 +141,9 @@
       <height>211</height>
      </rect>
     </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: #FFFFFF</string>
+    </property>
     <property name="maximum">
      <number>40</number>
     </property>
@@ -183,10 +195,10 @@
    <widget class="QWidget" name="layoutWidget_2">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>590</x>
       <y>10</y>
       <width>121</width>
-      <height>61</height>
+      <height>51</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2">

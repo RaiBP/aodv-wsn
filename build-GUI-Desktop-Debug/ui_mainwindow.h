@@ -61,10 +61,12 @@ public:
         MainWindow->resize(887, 445);
         centralWidget = new QWidget(MainWindow);
         centralWidget->setObjectName(QStringLiteral("centralWidget"));
+        centralWidget->setStyleSheet(QStringLiteral("background-color: #FFFFF0"));
         textEdit_Status = new QTextEdit(centralWidget);
         textEdit_Status->setObjectName(QStringLiteral("textEdit_Status"));
         textEdit_Status->setEnabled(true);
-        textEdit_Status->setGeometry(QRect(160, 10, 431, 331));
+        textEdit_Status->setGeometry(QRect(40, 330, 561, 51));
+        textEdit_Status->setStyleSheet(QStringLiteral("background-color: #FFFFFF"));
         layoutWidget = new QWidget(centralWidget);
         layoutWidget->setObjectName(QStringLiteral("layoutWidget"));
         layoutWidget->setGeometry(QRect(20, 10, 121, 118));
@@ -97,6 +99,7 @@ public:
         progressBar_lux = new QProgressBar(centralWidget);
         progressBar_lux->setObjectName(QStringLiteral("progressBar_lux"));
         progressBar_lux->setGeometry(QRect(760, 130, 71, 211));
+        progressBar_lux->setStyleSheet(QStringLiteral("background-color: #FFFFFF"));
         progressBar_lux->setMaximum(40);
         progressBar_lux->setValue(0);
         progressBar_lux->setTextVisible(false);
@@ -114,6 +117,7 @@ public:
         progressBar_temp = new QProgressBar(centralWidget);
         progressBar_temp->setObjectName(QStringLiteral("progressBar_temp"));
         progressBar_temp->setGeometry(QRect(620, 130, 71, 211));
+        progressBar_temp->setStyleSheet(QStringLiteral("background-color: #FFFFFF"));
         progressBar_temp->setMaximum(40);
         progressBar_temp->setValue(0);
         progressBar_temp->setTextVisible(false);
@@ -130,7 +134,7 @@ public:
         lcdNumber_lux->setSegmentStyle(QLCDNumber::Flat);
         layoutWidget_2 = new QWidget(centralWidget);
         layoutWidget_2->setObjectName(QStringLiteral("layoutWidget_2"));
-        layoutWidget_2->setGeometry(QRect(610, 10, 121, 61));
+        layoutWidget_2->setGeometry(QRect(590, 10, 121, 51));
         verticalLayout_2 = new QVBoxLayout(layoutWidget_2);
         verticalLayout_2->setSpacing(6);
         verticalLayout_2->setContentsMargins(11, 11, 11, 11);

@@ -191,18 +191,40 @@ void MainWindow::updateProgressBar(double temp, double lux){
     qDebug() << "Temp value " << QString::number(temp);
     ui->lcdNumber_temp->display(temp);
 
-    if(temp < 27){
+    if(temp < 20){
         ui->progressBar_temp->setStyleSheet("QProgressBar{background:white;} QProgressBar::chunk{border-radius:5px;background:#05B8CC}");
     }
-    else{
-        ui->progressBar_temp->setStyleSheet("QProgressBar{background:white;} QProgressBar::chunk{border-radius:5px;background:green}");
+    else if(temp >= 20 && temp < 25){
+        ui->progressBar_temp->setStyleSheet("QProgressBar{background:white;} QProgressBar::chunk{border-radius:5px;background:#7FFFAA}");
+    }
+    else if(temp >= 25 && temp < 30){
+        ui->progressBar_temp->setStyleSheet("QProgressBar{background:white;} QProgressBar::chunk{border-radius:5px;background:#FFA07A}");
+    }
+    else if(temp >= 30){
+        ui->progressBar_temp->setStyleSheet("QProgressBar{background:white;} QProgressBar::chunk{border-radius:5px;background:#F08080}");
     }
 
     ui->progressBar_temp->setValue((int)temp);
+
     printf("Battery: %f\n",lux);
-    ui->progressBar_lux->setMaximum(1000);
+    ui->progressBar_lux->setMaximum(200);
     qDebug() << "Temp value " << QString::number(lux);
     ui->lcdNumber_lux->display(lux);
+
+    if(lux < 50){
+        ui->progressBar_lux->setStyleSheet("QProgressBar{background:white;} QProgressBar::chunk{border-radius:5px;background:#05B8CC}");
+    }
+    else if(lux >= 50 && lux < 100){
+        ui->progressBar_lux->setStyleSheet("QProgressBar{background:white;} QProgressBar::chunk{border-radius:5px;background:#7FFFAA}");
+    }
+    else if(lux >= 100 && lux < 150){
+        ui->progressBar_lux->setStyleSheet("QProgressBar{background:white;} QProgressBar::chunk{border-radius:5px;background:#FFA07A}");
+    }
+    else if(lux >= 150){
+        ui->progressBar_lux->setStyleSheet("QProgressBar{background:white;} QProgressBar::chunk{border-radius:5px;background:#F08080}");
+    }
+
+
     ui->progressBar_lux->setValue((int)lux);
 }
 

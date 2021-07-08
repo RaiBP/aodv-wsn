@@ -729,8 +729,8 @@ static int getLuxValue(){
 	/* Configure the ADC ports */
 	adc_zoul.configure(SENSORS_HW_INIT, ZOUL_SENSORS_ADC1 | ZOUL_SENSORS_ADC3);
 
-	float m =1.6009;
-	float b = 41.269;
+	float m =1.5099;
+	float b = 42.466;
 	static uint16_t adc3_value;
 	adc3_value = adc_zoul.value(ZOUL_SENSORS_ADC3) >> 4;
 	uint8_t adc_input = adc3_value;
