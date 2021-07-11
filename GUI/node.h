@@ -47,25 +47,46 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-#include "mainwindow.h"
-#include "graphwidget.h"
 
-#include <QApplication>
-#include <QTime>
-#include <QMainWindow>
+#ifndef NODE_H
+#define NODE_H
 
-int main(int argc, char **argv)
+#include <QGraphicsItem>
+#include <QVector>
+
+class Edge;
+class GraphWidget;
+
+//! [0]
+class Node : public QGraphicsItem
 {
-    QApplication app(argc, argv);
+public:
+    Node(GraphWidget *graphWidget);
 
-    // GraphWidget *widget = new GraphWidget;
+    void addEdge(Edge *edge);
+    QVector<Edge *> edges() const;
 
-    QMainWindow mainWindow;
-    // mainWindow.setCentralWidget(widget);
+    enum { Type = UserType + 1 };
+    int type() const override { return Type; }
 
-    MainWindow w;
-    w.show();
+    void calculateForces();
+    bool advancePosition();
 
-    return app.exec();
-}
+    QRectF boundingRect() const override;
+    QPainterPath shape() const override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
+protected:
+    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+
+private:
+    QVector<Edge *> edgeList;
+    QPointF newPos;
+    GraphWidget *graph;
+};
+//! [0]
+
+#endif // NODE_H

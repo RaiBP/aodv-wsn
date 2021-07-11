@@ -47,25 +47,40 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-#include "mainwindow.h"
-#include "graphwidget.h"
 
-#include <QApplication>
-#include <QTime>
-#include <QMainWindow>
+#ifndef EDGE_H
+#define EDGE_H
 
-int main(int argc, char **argv)
+#include <QGraphicsItem>
+
+class Node;
+
+//! [0]
+class Edge : public QGraphicsItem
 {
-    QApplication app(argc, argv);
+public:
+    Edge(Node *sourceNode, Node *destNode);
 
-    // GraphWidget *widget = new GraphWidget;
+    Node *sourceNode() const;
+    Node *destNode() const;
 
-    QMainWindow mainWindow;
-    // mainWindow.setCentralWidget(widget);
+    void adjust();
 
-    MainWindow w;
-    w.show();
+    enum { Type = UserType + 2 };
+    int type() const override { return Type; }
 
-    return app.exec();
-}
+protected:
+    QRectF boundingRect() const override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
+private:
+    Node *source, *dest;
+
+    QPointF sourcePoint;
+    QPointF destPoint;
+    qreal arrowSize = 10;
+};
+//! [0]
+
+#endif // EDGE_H
+ 

@@ -2,11 +2,14 @@
 #include "ui_mainwindow.h"
 #include <qdebug.h>
 #include <QFile>
+#include <graphwidget.h>
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+
     ui->setupUi(this);
 
     // Get all available COM Ports and store them in a QList.
@@ -106,6 +109,8 @@ void MainWindow::receive()
     double temp;
     double lux;
 
+    GraphWidget *widget = ui->topologyMap;
+
     static QString str;
     char ch;
     while (port.getChar(&ch))
@@ -119,6 +124,9 @@ void MainWindow::receive()
                 qDebug() << "received data: " << str;
                 qDebug() << "data_list(0): " << data_list.at(0);
                 if(data_list.at(0) == "DATA"){      // data is received     DATA;ID:%2d;SRC:%1d;DEST:%1d;PAYLOAD:%s
+
+                    int route_array [6];
+
                     ui->textEdit_Status->append(str);
                     src = data_list.at(2).toInt();
                     qDebug() << "src: " << src;
@@ -133,6 +141,25 @@ void MainWindow::receive()
                     lux = pay_list.at(3).toDouble();
                     qDebug() << "temperature: " << temp << "luminance: " << lux;
 
+                    QString str = data_list.at(5);
+
+                    QStringList route_list = str.split(",");
+                    qDebug() << "route_list(0): " << route_list.at(0);  //ROUTE:node1
+                    qDebug() << "route_list(1): " << route_list.at(1);  //'Temperature value'
+                    qDebug() << "route_list(2): " << route_list.at(2);  //Luminance
+                    qDebug() << "route_list(3): " << route_list.at(3);  //'Battery value'
+                    qDebug() << "route_list(4): " << route_list.at(4);  //'Temperature value'
+                    qDebug() << "route_list(5): " << route_list.at(5);  //Luminance
+                    route_array[0] = route_list.at(0).toInt();
+                    route_array[1] = route_list.at(1).toInt();
+                    route_array[2] = route_list.at(2).toInt();
+                    route_array[3] = route_list.at(3).toInt();
+                    route_array[4] = route_list.at(4).toInt();
+                    route_array[5] = route_list.at(5).toInt();
+
+
+                    widget->addToRouteList(route_array, src);
+                    widget->drawRoutes();
 
                     addToFile(temp, lux, src);
                     qDebug() << "current comboBox text: " << ui->comboBox_Interface_source->currentText();
