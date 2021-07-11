@@ -10,8 +10,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
-    widget->show();
-
     // Get all available COM Ports and store them in a QList.
     QList<QextPortInfo> ports = QextSerialEnumerator::getPorts();
 
@@ -104,6 +102,8 @@ void MainWindow::receive()
     int src;
     double temp;
     double lux;
+
+    GraphWidget *widget = ui->topologyMap;
 
     static QString str;
     char ch;

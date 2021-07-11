@@ -20,10 +20,10 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>160</x>
-      <y>10</y>
-      <width>431</width>
-      <height>331</height>
+      <x>600</x>
+      <y>290</y>
+      <width>261</width>
+      <height>71</height>
      </rect>
     </property>
    </widget>
@@ -75,7 +75,7 @@
       <x>20</x>
       <y>10</y>
       <width>121</width>
-      <height>118</height>
+      <height>146</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -114,7 +114,7 @@
       <x>760</x>
       <y>130</y>
       <width>71</width>
-      <height>211</height>
+      <height>151</height>
      </rect>
     </property>
     <property name="maximum">
@@ -171,7 +171,7 @@
       <x>620</x>
       <y>130</y>
       <width>71</width>
-      <height>211</height>
+      <height>151</height>
      </rect>
     </property>
     <property name="maximum">
@@ -228,7 +228,7 @@
       <x>610</x>
       <y>10</y>
       <width>121</width>
-      <height>61</height>
+      <height>62</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -244,6 +244,16 @@
      </item>
     </layout>
    </widget>
+   <widget class="GraphWidget" name="topologyMap" native="true">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>10</y>
+      <width>431</width>
+      <height>341</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -251,7 +261,7 @@
      <x>0</x>
      <y>0</y>
      <width>869</width>
-     <height>22</height>
+     <height>32</height>
     </rect>
    </property>
   </widget>
@@ -266,6 +276,14 @@
   <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>GraphWidget</class>
+   <extends>QWidget</extends>
+   <header>graphwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
