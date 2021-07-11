@@ -52,6 +52,7 @@
 #define GRAPHWIDGET_H
 
 #include <QGraphicsView>
+#include <node.h>
 
 class Node;
 
@@ -122,6 +123,8 @@ public:
     void drawRoutes();
     void itemMoved();
     void drawRoute(Route r);
+    void addNodeLabels(char *node_id, int pos_x, int pos_y);
+    void setNodesPosition(Node *node_1, Node *node_2, Node *node_3, Node *node_4, Node *node_5, Node *node_6, Node *node_7);
     std::list<Connection> getConnectionListfromArray(int route_array[]);
 
     void setNode(Node *node, int node_id) {
@@ -190,3 +193,5 @@ protected:
 //! [0]
 
 #endif // GRAPHWIDGET_H
+
+

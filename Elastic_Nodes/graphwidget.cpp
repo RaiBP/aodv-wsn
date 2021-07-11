@@ -75,6 +75,23 @@ GraphWidget::GraphWidget(QWidget *parent)
     scale(qreal(0.8), qreal(0.8));
     setMinimumSize(400, 400);
     setWindowTitle(tr("Elastic Nodes"));
+
+    addNodeLabels("1", 150, 0);
+    addNodeLabels("2", 80, -100);
+    addNodeLabels("3", -20, -100);
+    addNodeLabels("4", -120, -100);
+    addNodeLabels("5", 80, 100);
+    addNodeLabels("6", -20, 100);
+    addNodeLabels("7", -120, 100);
+    //addNodeLabels("1", 0, 0);
+    //addNodeLabels("2", 0, -100);
+    //addNodeLabels("3", 100, -100);
+    //addNodeLabels("4", -100, 0);
+    //addNodeLabels("5", 100, 0);
+    //addNodeLabels("6", -100, 100);
+    //addNodeLabels("7", -100, -100);
+
+
 //! [0]
 
 //! [1]
@@ -105,76 +122,34 @@ GraphWidget::GraphWidget(QWidget *parent)
     scene->addItem(node6);
     scene->addItem(node7);
 
-    node1->setPos(0, 0);
-    node2->setPos(0, -50);
-    node3->setPos(50, -50);
-    node4->setPos(-50, 0);
-    node5->setPos(50, 0);
-    node6->setPos(-50, 50);
-    node7->setPos(-50, -50);
+    setNodesPosition(node1, node2, node3, node4, node5, node6, node7);
 
 }
+
 //! [1]
 
-// SLOT: Prints data received from the port on the QTextEdit widget.
-/*
-void GraphWidget::receiveTopology()
+
+void GraphWidget::addNodeLabels(char *node_id, int pos_x, int pos_y)
 {
-
-    QByteArray data = port.readAll();
-    QString str = data;
-    ui->textEdit_Status->insertPlainText(data);
-
-    int src;
-    double temp;
-    double batt;
-
-    QStringList data_list = str.split(";");
-    if(!data_list.isEmpty()){
-        qDebug() << "received data: " << data;
-        qDebug() << "data_list(0): " << data_list.at(0);
-        if(data_list.at(0) == "DATA"){      // data is received     DATA;ID:%2d;SRC:%1d;DEST:%1d;PAYLOAD:%s;ROUTE:%1d,%1d,...
-            int[6] route_array = {0};
-            int src = 0;
-            for(int i=1; i < data_list.size(); i++){
-                qDebug() << "data list value " << i << " " << data_list.at(i);
-                QString str = data_list.at(i);
-                if(str.contains("SRC:")){
-                    QStringList src_list = str.split(":");          //SRC:%1d
-                    qDebug() << "src_list(1): " << src_list.at(1);
-                    src = src_list.at(1).toInt();
-                }
-                if(str.contains("PAYLOAD:")){       //PAYLOAD:Temperature %d Luminance %d
-                    QStringList pay_list = str.split(" ");
-                    qDebug() << "pay_list(0): " << pay_list.at(0);  //PAYLOAD:Temperature
-                    qDebug() << "pay_list(1): " << pay_list.at(1);  //'Temperature value'
-                    qDebug() << "pay_list(2): " << pay_list.at(2);  //Luminance
-                    qDebug() << "pay_list(3): " << pay_list.at(3);  //'Battery value'
-                    temp = pay_list.at(1).toDouble();
-                    batt = pay_list.at(3).toDouble();
-                    }
-                if(str.contains("ROUTE:")){       //ROUTE:%d,%d,%d,%d,%d,%d
-                    QStringList route_list = str.split(",");
-                    qDebug() << "route_list(0): " << pay_list.at(0);  //PAYLOAD:Temperature
-                    qDebug() << "route_list(1): " << pay_list.at(1);  //'Temperature value'
-                    qDebug() << "route_list(2): " << pay_list.at(2);  //Luminance
-                    qDebug() << "route_list(3): " << pay_list.at(3);  //'Battery value'
-                    qDebug() << "route_list(4): " << pay_list.at(4);  //'Temperature value'
-                    qDebug() << "proute_list(5): " << pay_list.at(5);  //Luminance
-                    route_array[0] = pay_list.at(0).toInt();
-                    route_array[1] = pay_list.at(1).toInt();
-                    route_array[2] = pay_list.at(2).toInt();
-                    route_array[3] = pay_list.at(3).toInt();
-                    route_array[4] = pay_list.at(4).toInt();
-                    route_array[5] = pay_list.at(5).toInt();
-                    }
-                }
-            addToRouteList(route_array, src);    
-            drawRoutes();
-        }
-    }
+    QGraphicsTextItem *text = scene()->addText(node_id);
+    //text->setHtml(QString("<div style='background:rgba(0, 0, 0, 100%);'>" + QString(node_id) + QString("</div>")));
+    text->setHtml(QString("<div style='color:black'>" + QString(node_id) + QString("</div>")));
+    text->setPos(pos_x - 7, pos_y + 10);
 }
-*/
+
+
+void GraphWidget::setNodesPosition(Node *node_1, Node *node_2, Node *node_3, Node *node_4, Node *node_5, Node *node_6, Node *node_7)
+{
+    node_1->setPos(150, 0);
+    node_2->setPos(80, -100);
+    node_3->setPos(-20, -100);
+    node_4->setPos(-120, -100);
+    node_5->setPos(80, 100);
+    node_6->setPos(-20, 100);
+    node_7->setPos(-120, 100);
+
+}
+
 
 std::list<Connection> GraphWidget::getConnectionListfromArray(int route_array[])
 {
@@ -225,6 +200,14 @@ void GraphWidget::drawRoutes()
 {
     scene()->clear(); // clear all items from scene
 
+    addNodeLabels("1", 150, 0);
+    addNodeLabels("2", 80, -100);
+    addNodeLabels("3", -20, -100);
+    addNodeLabels("4", -120, -100);
+    addNodeLabels("5", 80, 100);
+    addNodeLabels("6", -20, 100);
+    addNodeLabels("7", -120, 100);
+
     Node *node1 = new Node(this); // Receiving Node
     Node *node2 = new Node(this);
     Node *node3 = new Node(this);
@@ -256,13 +239,7 @@ void GraphWidget::drawRoutes()
     qDebug() << "adding node7";
     scene()->addItem(node7);
 
-    node1->setPos(0, 0);
-    node2->setPos(0, -50);
-    node3->setPos(50, -50);
-    node4->setPos(-50, 0);
-    node5->setPos(50, 0);
-    node6->setPos(-50, 50);
-    node7->setPos(-50, -50);
+    setNodesPosition(node1, node2, node3, node4, node5, node6, node7);
 
     for (const Route & r : route_list)
     {
@@ -387,8 +364,7 @@ void GraphWidget::drawBackground(QPainter *painter, const QRectF &rect)
     // Text
     QRectF textRect(sceneRect.left() + 4, sceneRect.top() + 4,
                     sceneRect.width() - 4, sceneRect.height() - 4);
-    QString message(tr("Click and drag the nodes around, and zoom with the mouse "
-                       "wheel or the '+' and '-' keys"));
+    QString message(tr("Topology Network Map"));
 
     QFont font = painter->font();
     font.setBold(true);

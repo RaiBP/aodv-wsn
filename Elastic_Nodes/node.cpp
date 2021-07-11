@@ -132,7 +132,8 @@ void Node::calculateForces()
 
 //! [6]
     QRectF sceneRect = scene()->sceneRect();
-    newPos = pos() + QPointF(xvel, yvel);
+    //newPos = pos() + QPointF(xvel, yvel);
+    newPos = pos();
     newPos.setX(qMin(qMax(newPos.x(), sceneRect.left() + 10), sceneRect.right() - 10));
     newPos.setY(qMin(qMax(newPos.y(), sceneRect.top() + 10), sceneRect.bottom() - 10));
 }
