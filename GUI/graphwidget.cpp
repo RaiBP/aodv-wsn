@@ -58,7 +58,12 @@
 #include <qdebug.h>
 #include <QKeyEvent>
 #include <QRandomGenerator>
+#include <QSignalMapper>
 
+
+bool static isRouteExpired(Route r) {
+    return r.age > 6;
+}
 
 //! [0]
 GraphWidget::GraphWidget(QWidget *parent)
@@ -128,6 +133,12 @@ GraphWidget::GraphWidget(QWidget *parent)
 
 //! [1]
 
+void GraphWidget::removefromRouteList(int index) {
+    std::list<Route>::iterator iter;
+    advance(iter,index);
+    route_list.erase(iter);
+    qDebug() << "Route removed!";
+}
 
 void GraphWidget::addNodeLabels(char *node_id, int pos_x, int pos_y)
 {
@@ -183,18 +194,40 @@ void GraphWidget::addToRouteList(int route_array[], int src)
 {   
     std::list<Connection> new_connections = getConnectionListfromArray(route_array);
 
+    bool routeExists = 0;
     for (Route & r : route_list)
     {
             if (r.src == src) {
                 r.setSource(src);
                 r.setConnections(new_connections);
+                r.age = 0;
+                routeExists = 1;
+            }
+            else {
+                r.age++;
             }
     }
 
-    Route new_route(src, 1, new_connections);
+    if (!routeExists)
+    {
+        Route new_route(src, 1, new_connections);
+        route_list.push_back(new_route);
+    }
 
-    route_list.push_back(new_route);
+    route_list.remove_if(isRouteExpired);
+
+    /*
+    int route_index = route_list.size() - 1;
+
+    QTimer *timer = new QTimer(this);
+
+    connect(timer,  SIGNAL(timeout()), this, [this]{ removefromRouteList(route_index); });
+
+    timer->setSingleShot(true);
+    timer->start(1000*5);
+    */
 }
+
 
 void GraphWidget::drawRoutes()
 {
@@ -240,6 +273,7 @@ void GraphWidget::drawRoutes()
     scene()->addItem(node7);
 
     setNodesPosition(node1, node2, node3, node4, node5, node6, node7);
+
 
     for (const Route & r : route_list)
     {

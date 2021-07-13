@@ -53,6 +53,7 @@
 
 #include <QGraphicsView>
 #include <node.h>
+#include <QTimer>
 
 class Node;
 
@@ -72,12 +73,14 @@ class Route {
     std::list<Connection> connections;
     int src;
     int dst;
+    int age;
 
     Route(int s, int d, std::list<Connection> conn)
         {
             src = s;
             dst = d;
             connections = conn;
+            age = 0;
         }
 
     void setSource(int s) {
@@ -88,7 +91,7 @@ class Route {
         connections = conn;
     }
 
-bool isConnectionInRoute(Connection conn) {
+bool isConnectionInRoute(Connection conn) const {
         for (const Connection & c : connections)
         {
             if (conn.isEquals(c))
@@ -96,6 +99,38 @@ bool isConnectionInRoute(Connection conn) {
         }
         return false;
     }
+/*
+bool isEquals(const Route r) {
+    bool equalSource = src == r.src;
+    bool equalDestination = dst == r.dst;
+    bool equalConnections = 1;
+    for (const Connection & c : connections)
+    {
+        equalConnections = equalConnections && r.isConnectionInRoute(c);
+    }
+    for (const Connection & c_other : r.connections)
+    {
+        equalConnections = equalConnections && isConnectionInRoute(c_other);
+    }
+    return equalSource && equalDestination && equalConnections;
+}
+*/
+
+bool operator == (const Route &r) const
+{
+    bool equalSource = this->src == r.src;
+    bool equalDestination = this->dst == r.dst;
+    bool equalConnections = 1;
+    for (const Connection & c : connections)
+    {
+        equalConnections = equalConnections && r.isConnectionInRoute(c);
+    }
+    for (const Connection & c_other : r.connections)
+    {
+        equalConnections = equalConnections && this->isConnectionInRoute(c_other);
+    }
+    return equalSource && equalDestination && equalConnections;
+}
 
 ~Route(){}
 };
@@ -178,6 +213,7 @@ public slots:
     void shuffle();
     void zoomIn();
     void zoomOut();
+    void removefromRouteList(int);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;

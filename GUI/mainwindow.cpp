@@ -12,6 +12,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
+    this->setStyleSheet("background-color: black;");
+
     // Get all available COM Ports and store them in a QList.
     QList<QextPortInfo> ports = QextSerialEnumerator::getPorts();
 
